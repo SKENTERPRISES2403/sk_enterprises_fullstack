@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import shutil
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
 from bson import ObjectId
 from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File, status
@@ -13,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
 from .db import close_mongo, connect_to_mongo, get_db
+from .image_upload import upload_image
 from .schemas import (
     AddressIn,
     LeadIn,
@@ -33,7 +31,7 @@ settings.upload_dir.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="S.K. Enterprises Ecommerce API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin, "http://127.0.0.1:5173", "http://localhost:5173"],
+    allow_origins=settings.cors_origins(),
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
@@ -208,16 +206,7 @@ async def upload_product_image(
     file: UploadFile = File(...),
     _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff")),
 ) -> dict[str, str]:
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Only image uploads are allowed")
-    ext = Path(file.filename or "upload.jpg").suffix.lower() or ".jpg"
-    if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
-        ext = ".jpg"
-    filename = f"{uuid4().hex}{ext}"
-    path = settings.upload_dir / filename
-    with path.open("wb") as out:
-        shutil.copyfileobj(file.file, out)
-    return {"image_url": f"/uploads/{filename}"}
+    return {"image_url": upload_image(file, settings)}
 
 
 @app.get("/api/addresses")

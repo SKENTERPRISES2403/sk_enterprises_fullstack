@@ -61,6 +61,57 @@ The frontend automatically calls the backend on the same host at port `8000` unl
 docker compose up -d mongo
 ```
 
+## Public Deployment
+
+Use MongoDB Atlas for the production database, Render for the FastAPI backend and Vercel for the React frontend.
+
+### Render Backend
+
+Create a new Render Web Service from this GitHub repo. The included `render.yaml` can pre-fill most settings. If setting it manually:
+
+- Root Directory: `backend`
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+Required environment variables:
+
+```text
+MONGODB_URL=mongodb+srv://USER:PASSWORD@HOST/sk_enterprises?retryWrites=true&w=majority&appName=Cluster0
+DATABASE_NAME=sk_enterprises
+JWT_SECRET=<strong-random-secret>
+FRONTEND_ORIGIN=<vercel-frontend-url>
+SEED_OWNER_NAME=S.K. Owner
+SEED_OWNER_PHONE=7007062590
+SEED_OWNER_PASSWORD=<owner-password>
+WHATSAPP_NUMBER=919415216320
+CALL_NUMBER=917007062590
+CLOUDINARY_CLOUD_NAME=<cloudinary-cloud-name>
+CLOUDINARY_API_KEY=<cloudinary-api-key>
+CLOUDINARY_API_SECRET=<cloudinary-api-secret>
+CLOUDINARY_FOLDER=sk-enterprises/products
+```
+
+### Vercel Frontend
+
+Create a new Vercel project from this GitHub repo:
+
+- Root Directory: `frontend`
+- Framework: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+Set this environment variable:
+
+```text
+VITE_API_URL=<render-backend-url>/api
+```
+
+After Vercel deploys, copy the Vercel URL back into Render as `FRONTEND_ORIGIN`, then redeploy the backend.
+
+### Image Uploads
+
+If Cloudinary environment variables are present, admin product uploads go to Cloudinary. Without Cloudinary, local development falls back to `backend/app/static/uploads`.
+
 ## Collections
 
 - `users`

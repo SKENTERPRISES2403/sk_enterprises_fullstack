@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: sk-enterprises-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_NAME
+        value: sk_enterprises
+      - key: JWT_EXPIRES_MINUTES
+        value: 10080
+      - key: SEED_OWNER_NAME
+        value: S.K. Owner
+      - key: SEED_OWNER_PHONE
+        value: 7007062590
+      - key: WHATSAPP_NUMBER
+        value: 919415216320
+      - key: CALL_NUMBER
+        value: 917007062590
+      - key: CLOUDINARY_FOLDER
+        value: sk-enterprises/products
+      - key: MONGODB_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_OWNER_PASSWORD
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

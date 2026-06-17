@@ -3,6 +3,10 @@ backend/.mongo-data/
 backend/.mongo-log/
 backend/logs/
 backend/app/data/
+backend/app/static/uploads/[0-9a-f][0-9a-f]*.jpg
+backend/app/static/uploads/[0-9a-f][0-9a-f]*.jpeg
+backend/app/static/uploads/[0-9a-f][0-9a-f]*.png
+backend/app/static/uploads/[0-9a-f][0-9a-f]*.webp
 backend/__pycache__/
 backend/app/__pycache__/
 frontend/node_modules/
