@@ -4,10 +4,13 @@ import {
   api,
   imageUrl,
   demoProducts,
+  defaultGallery,
   orderStatuses,
   leadStatuses,
   categories as defaultCategories,
   whatsappNumber,
+  callNumber,
+  mapsUrl,
 } from "./api";
 
 const emptyProduct = {
@@ -24,9 +27,240 @@ const emptyProduct = {
   active: true,
 };
 
+const emptyGalleryItem = {
+  title: "",
+  caption: "",
+  image_url: "",
+  position: 0,
+  active: true,
+};
+
+const brandTiles = [
+  ["ES", "ESSEL BATH FITTINGS", "Authorized CP fittings"],
+  ["BP", "BIRLA PIVOT", "Sanitaryware partner"],
+  ["RF", "ROFF by PIDILITE", "Tile and stone fixing"],
+  ["SP", "SUPREME PIPES", "Plumbing systems"],
+  ["AP", "ASHIRVAD PIPES", "CPVC and UPVC"],
+  ["CR", "CERA", "Bath solutions"],
+  ["HW", "HINDWARE", "Sanitaryware"],
+  ["SX", "SINTEX", "Water tanks"],
+];
+
+const dealershipPhotos = [
+  { title: "ESSEL Authorized Dealership", image_url: "/assets/essel_cert.jpg" },
+  { title: "Roff by Pidilite Display", image_url: "/assets/roff_cert.jpg" },
+  { title: "Birla Pivot Stock", image_url: "/assets/birla_pivot_stock.jpg" },
+];
+
+const reviews = [
+  {
+    name: "Dheeraj Pandey",
+    text: "Bathroom fittings aur tiles ke liye genuine rate mila. Staff ne product compare karke sahi option suggest kiya.",
+  },
+  {
+    name: "Vivek Mishra",
+    text: "Site delivery time par hui. Supreme pipes aur Roff material dono original packing me mile.",
+  },
+  {
+    name: "Ramesh Gupta",
+    text: "Prayagraj me sanitaryware ka range accha hai. Quote clear tha aur billing bhi proper GST ke saath mili.",
+  },
+];
+
+const copy = {
+  en: {
+    navProducts: "Products",
+    navGallery: "Gallery",
+    navWhy: "Why Us",
+    navContact: "Contact",
+    shop: "Shop",
+    orders: "Orders",
+    admin: "Admin",
+    login: "Login",
+    cart: "Cart",
+    heroKicker: "GST registered authorized dealer in Prayagraj",
+    heroTitle: "S.K. Enterprises",
+    heroSub: "Premium hardware, CP fittings, sanitaryware, tiles, tanks, pipes and construction chemicals with site delivery and bulk order support.",
+    quote: "Send Product List",
+    browse: "Browse Products",
+    trust1: "GST Registered",
+    trust2: "Authorized Dealer",
+    trust3: "Site Delivery Available",
+    trust4: "Bulk Orders Accepted",
+    stat1: "Years Experience",
+    stat2: "Happy Customers",
+    stat3: "Contractor Network",
+    stat4: "Offline Payment",
+    featured: "Featured Products",
+    featuredSub: "Fast-moving categories for homes, projects and contractors.",
+    catalog: "Product Catalog",
+    search: "Search products, brand, category...",
+    whyTitle: "Why S.K. Enterprises?",
+    whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
+    feature1Title: "Original Brands",
+    feature1Text: "Authorized supply for ESSEL, Birla Pivot, Roff, Supreme, Ashirvad and more.",
+    feature2Title: "Wholesale Support",
+    feature2Text: "Retail and bulk order pricing with GST billing for sites and contractors.",
+    feature3Title: "Site Delivery",
+    feature3Text: "Local delivery support for homes, shops and construction sites across Prayagraj.",
+    feature4Title: "Practical Guidance",
+    feature4Text: "Product suggestions based on budget, warranty, plumbing needs and site use.",
+    dealership: "Dealership & Brand Proof",
+    dealershipSub: "Real dealership boards, certificates and stock photos from the showroom.",
+    gallery: "Showroom Gallery",
+    gallerySub: "A quick look at the showroom, product walls and display range.",
+    reviews: "Customer Reviews",
+    reviewsSub: "Realistic feedback from local customers and site buyers.",
+    contactTitle: "Visit or send your requirement",
+    contactSub: "Call, WhatsApp or open location directly. You can also leave a quick inquiry.",
+    address: "Kanihar Road, Saray Taki, Prayagraj, Uttar Pradesh 211019",
+    plusCode: "Plus Code: CW9J+CF Prayagraj",
+    formTitle: "Request a quick quote",
+    formName: "Full name",
+    formPhone: "Phone number",
+    formCategory: "Category",
+    formMessage: "Requirement / site details",
+    formButton: "Send Inquiry",
+    askQuote: "Ask for quote",
+    details: "Details",
+    add: "Add",
+    addCart: "Add to Cart",
+    all: "All",
+    finalRate: "Final rate on WhatsApp / store",
+    checkout: "Checkout",
+    emptyCart: "Cart is empty. Add products first.",
+  },
+  hi: {
+    navProducts: "प्रोडक्ट्स",
+    navGallery: "गैलरी",
+    navWhy: "क्यों हम",
+    navContact: "संपर्क",
+    shop: "शॉप",
+    orders: "ऑर्डर",
+    admin: "एडमिन",
+    login: "लॉगिन",
+    cart: "कार्ट",
+    heroKicker: "प्रयागराज में GST रजिस्टर्ड अधिकृत डीलर",
+    heroTitle: "S.K. Enterprises",
+    heroSub: "हार्डवेयर, CP फिटिंग्स, सेनेटरीवेयर, टाइल्स, टैंक, पाइप और कंस्ट्रक्शन केमिकल्स के लिए भरोसेमंद दुकान।",
+    quote: "लिस्ट भेजें",
+    browse: "प्रोडक्ट देखें",
+    trust1: "GST रजिस्टर्ड",
+    trust2: "अधिकृत डीलर",
+    trust3: "साइट डिलीवरी उपलब्ध",
+    trust4: "बल्क ऑर्डर स्वीकार",
+    stat1: "साल का अनुभव",
+    stat2: "खुश ग्राहक",
+    stat3: "कॉन्ट्रैक्टर नेटवर्क",
+    stat4: "ऑफलाइन पेमेंट",
+    featured: "फीचर्ड प्रोडक्ट्स",
+    featuredSub: "घर, प्रोजेक्ट और कॉन्ट्रैक्टर के लिए जरूरी कैटेगरी।",
+    catalog: "प्रोडक्ट कैटलॉग",
+    search: "प्रोडक्ट, ब्रांड, कैटेगरी खोजें...",
+    whyTitle: "Why S.K. Enterprises?",
+    whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
+    feature1Title: "ओरिजिनल ब्रांड",
+    feature1Text: "ESSEL, Birla Pivot, Roff, Supreme, Ashirvad और अन्य ब्रांड की अधिकृत सप्लाई।",
+    feature2Title: "थोक सपोर्ट",
+    feature2Text: "रिटेल और बल्क ऑर्डर के लिए GST बिलिंग के साथ सही रेट।",
+    feature3Title: "साइट डिलीवरी",
+    feature3Text: "प्रयागराज में घर और कंस्ट्रक्शन साइट तक डिलीवरी सपोर्ट।",
+    feature4Title: "सही सलाह",
+    feature4Text: "बजट, वारंटी और साइट जरूरत के हिसाब से प्रोडक्ट सुझाव।",
+    dealership: "डीलरशिप और ब्रांड प्रूफ",
+    dealershipSub: "शोरूम के रियल बोर्ड, सर्टिफिकेट और स्टॉक फोटो।",
+    gallery: "शोरूम गैलरी",
+    gallerySub: "शोरूम, डिस्प्ले और प्रोडक्ट रेंज की झलक।",
+    reviews: "कस्टमर रिव्यू",
+    reviewsSub: "लोकल ग्राहकों और साइट खरीदारों की राय।",
+    contactTitle: "दुकान आएं या जरूरत भेजें",
+    contactSub: "Call, WhatsApp या location direct open करें। Quick inquiry भी भेज सकते हैं।",
+    address: "कनिहार रोड, सराय तकी, प्रयागराज, उत्तर प्रदेश 211019",
+    plusCode: "Plus Code: CW9J+CF Prayagraj",
+    formTitle: "फ्री कोटेशन लें",
+    formName: "पूरा नाम",
+    formPhone: "फोन नंबर",
+    formCategory: "कैटेगरी",
+    formMessage: "जरूरत / साइट डिटेल",
+    formButton: "Inquiry भेजें",
+    askQuote: "रेट पूछें",
+    details: "डिटेल",
+    add: "Add",
+    addCart: "कार्ट में जोड़ें",
+    all: "All",
+    finalRate: "Final rate WhatsApp / store पर",
+    checkout: "Checkout",
+    emptyCart: "कार्ट खाली है। पहले प्रोडक्ट जोड़ें।",
+  },
+  bho: {
+    navProducts: "प्रोडक्ट",
+    navGallery: "गैलरी",
+    navWhy: "काहे हम",
+    navContact: "संपर्क",
+    shop: "शॉप",
+    orders: "ऑर्डर",
+    admin: "एडमिन",
+    login: "लॉगिन",
+    cart: "कार्ट",
+    heroKicker: "प्रयागराज में GST रजिस्टर्ड अधिकृत डीलर",
+    heroTitle: "S.K. Enterprises",
+    heroSub: "हार्डवेयर, CP फिटिंग, सेनेटरी, टाइल्स, टैंक, पाइप आ कंस्ट्रक्शन केमिकल्स खातिर भरोसेमंद दुकान।",
+    quote: "लिस्ट भेजीं",
+    browse: "प्रोडक्ट देखीं",
+    trust1: "GST रजिस्टर्ड",
+    trust2: "अधिकृत डीलर",
+    trust3: "साइट डिलीवरी बा",
+    trust4: "थोक ऑर्डर लेवल जाला",
+    stat1: "साल के अनुभव",
+    stat2: "खुश ग्राहक",
+    stat3: "ठेकेदार नेटवर्क",
+    stat4: "ऑफलाइन पेमेंट",
+    featured: "फीचर्ड प्रोडक्ट",
+    featuredSub: "घर, प्रोजेक्ट आ ठेकेदार खातिर जरूरी सामान।",
+    catalog: "प्रोडक्ट कैटलॉग",
+    search: "प्रोडक्ट, ब्रांड, कैटेगरी खोजीं...",
+    whyTitle: "Why S.K. Enterprises?",
+    whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
+    feature1Title: "असली ब्रांड",
+    feature1Text: "ESSEL, Birla Pivot, Roff, Supreme, Ashirvad आ अउरी ब्रांड के अधिकृत सप्लाई।",
+    feature2Title: "थोक सपोर्ट",
+    feature2Text: "रिटेल आ थोक ऑर्डर खातिर GST बिलिंग के साथे बढ़िया रेट।",
+    feature3Title: "साइट डिलीवरी",
+    feature3Text: "प्रयागराज में घर आ साइट तक डिलीवरी सपोर्ट।",
+    feature4Title: "सही सलाह",
+    feature4Text: "बजट, वारंटी आ साइट के जरूरत हिसाब से सामान बतावल जाला।",
+    dealership: "डीलरशिप आ ब्रांड प्रूफ",
+    dealershipSub: "शोरूम के असली बोर्ड, सर्टिफिकेट आ स्टॉक फोटो।",
+    gallery: "शोरूम गैलरी",
+    gallerySub: "शोरूम, डिस्प्ले आ प्रोडक्ट रेंज के झलक।",
+    reviews: "ग्राहकन के राय",
+    reviewsSub: "लोकल ग्राहक आ साइट खरीदारन के भरोसेमंद बात।",
+    contactTitle: "दुकान आईं या जरूरत भेजीं",
+    contactSub: "Call, WhatsApp या location direct खोल सकत बानी। Quick inquiry भी भेजीं।",
+    address: "कनिहार रोड, सराय तकी, प्रयागराज, उत्तर प्रदेश 211019",
+    plusCode: "Plus Code: CW9J+CF Prayagraj",
+    formTitle: "फ्री कोटेशन लीं",
+    formName: "पूरा नाम",
+    formPhone: "फोन नंबर",
+    formCategory: "कैटेगरी",
+    formMessage: "जरूरत / साइट डिटेल",
+    formButton: "Inquiry भेजीं",
+    askQuote: "रेट पूछीं",
+    details: "डिटेल",
+    add: "Add",
+    addCart: "कार्ट में जोड़ीं",
+    all: "All",
+    finalRate: "Final rate WhatsApp / store पर",
+    checkout: "Checkout",
+    emptyCart: "कार्ट खाली बा। पहिले प्रोडक्ट जोड़ीं।",
+  },
+};
+
 function App() {
   const [page, setPage] = useHashPage();
+  const [lang, setLang] = useLocalStorage("sk_lang", "en");
   const [products, setProducts] = useState([]);
+  const [gallery, setGallery] = useState(defaultGallery);
   const [categories, setCategories] = useState(defaultCategories);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -36,17 +270,29 @@ function App() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  useEffect(() => {
     loadCatalog();
   }, []);
 
+  const t = (key) => copy[lang]?.[key] || copy.en[key] || key;
+
   async function loadCatalog() {
     try {
-      const [productRows, categoryRows] = await Promise.all([api.getProducts(), api.getCategories()]);
+      const [productRows, categoryRows, galleryRows] = await Promise.all([
+        api.getProducts(),
+        api.getCategories(),
+        api.getGallery(),
+      ]);
       setProducts(productRows.length ? productRows : demoProducts);
       setCategories(categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories);
+      setGallery(galleryRows.length ? galleryRows : defaultGallery);
     } catch {
       setProducts(demoProducts);
       setCategories(defaultCategories);
+      setGallery(defaultGallery);
       setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
     }
   }
@@ -105,6 +351,13 @@ function App() {
     setPage("store");
   }
 
+  async function handleLead(form) {
+    const payload = Object.fromEntries(new FormData(form));
+    await api.createLead(payload);
+    setNotice("Inquiry saved. We will contact you soon.");
+    form.reset();
+  }
+
   async function placeOrder(form) {
     if (!auth?.token) {
       setPage("login");
@@ -140,19 +393,23 @@ function App() {
 
   return (
     <>
-      <Header auth={auth} cartQty={cartQty} setPage={setPage} logout={logout} />
+      <Header auth={auth} cartQty={cartQty} setPage={setPage} logout={logout} lang={lang} setLang={setLang} t={t} />
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
 
       {page === "store" && (
         <StorePage
+          t={t}
+          lang={lang}
           featured={featured}
           products={visibleProducts}
+          gallery={gallery}
           categories={categories}
           query={query}
           setQuery={setQuery}
           category={category}
           setCategory={setCategory}
           addToCart={addToCart}
+          submitLead={handleLead}
           openDetail={(product) => {
             setSelected(product);
             setPage("detail");
@@ -161,11 +418,11 @@ function App() {
       )}
 
       {page === "detail" && selected && (
-        <ProductDetail product={selected} addToCart={addToCart} back={() => setPage("store")} />
+        <ProductDetail product={selected} addToCart={addToCart} back={() => setPage("store")} t={t} />
       )}
 
       {page === "cart" && (
-        <CartPage cart={cart} updateQty={updateQty} setPage={setPage} />
+        <CartPage cart={cart} updateQty={updateQty} setPage={setPage} t={t} />
       )}
 
       {page === "checkout" && (
@@ -181,80 +438,96 @@ function App() {
       )}
 
       {page === "admin" && (
-        <AdminPanel auth={auth} setAuth={setAuth} setPage={setPage} reloadCatalog={loadCatalog} />
+        <AdminPanel auth={auth} setPage={setPage} reloadCatalog={loadCatalog} />
       )}
 
+      <FloatingLinks />
       <Footer />
     </>
   );
 }
 
-function Header({ auth, cartQty, setPage, logout }) {
+function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
   const adminRole = ["owner", "admin", "staff"].includes(auth?.user?.role);
+  const jumpTo = (id) => {
+    setPage("store");
+    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
+
   return (
     <header className="site-header">
       <button className="brand-button" onClick={() => setPage("store")}>
         <span className="brand-mark">SK</span>
         <span>S.K. <strong>Enterprises</strong></span>
       </button>
-      <nav>
-        <button onClick={() => setPage("store")}>Shop</button>
-        <button onClick={() => setPage("orders")}>Orders</button>
-        {adminRole && <button onClick={() => setPage("admin")}>Admin</button>}
+      <nav className="main-nav">
+        <button onClick={() => jumpTo("products")}>{t("navProducts")}</button>
+        <button onClick={() => jumpTo("gallery")}>{t("navGallery")}</button>
+        <button onClick={() => jumpTo("why")}>{t("navWhy")}</button>
+        <button onClick={() => jumpTo("contact")}>{t("navContact")}</button>
+        <button onClick={() => setPage("orders")}>{t("orders")}</button>
+        {adminRole && <button onClick={() => setPage("admin")}>{t("admin")}</button>}
       </nav>
       <div className="header-actions">
+        <div className="lang-switch" aria-label="Language">
+          {["en", "hi", "bho"].map((item) => (
+            <button key={item} className={lang === item ? "active" : ""} onClick={() => setLang(item)}>
+              {item === "en" ? "EN" : item === "hi" ? "हिं" : "भोज"}
+            </button>
+          ))}
+        </div>
         {auth ? (
           <button className="soft-button" onClick={logout}>{auth.user.name}</button>
         ) : (
-          <button className="soft-button" onClick={() => setPage("login")}>Login</button>
+          <button className="soft-button" onClick={() => setPage("login")}>{t("login")}</button>
         )}
-        <button className="cart-button" onClick={() => setPage("cart")}>Cart <b>{cartQty}</b></button>
+        <button className="cart-button" onClick={() => setPage("cart")}>{t("cart")} <b>{cartQty}</b></button>
       </div>
     </header>
   );
 }
 
-export function StorePage({ featured, products, categories, query, setQuery, category, setCategory, addToCart, openDetail }) {
+export function StorePage({
+  t,
+  featured,
+  products,
+  gallery,
+  categories,
+  query,
+  setQuery,
+  category,
+  setCategory,
+  addToCart,
+  submitLead,
+  openDetail,
+}) {
   return (
     <main>
       <section className="hero">
         <div className="hero-copy">
-          <span className="pill">Prayagraj hardware and sanitary store</span>
-          <h1>S.K. Enterprises</h1>
-          <p>Product catalog, quote cart, offline payment and admin-managed stock for CP fittings, sanitaryware, tiles, tanks, pipes, sinks and Roff chemicals.</p>
+          <span className="pill light">{t("heroKicker")}</span>
+          <h1>{t("heroTitle")}</h1>
+          <p>{t("heroSub")}</p>
           <div className="hero-actions">
-            <a className="primary" href="#products">Shop products</a>
-            <a className="whatsapp" href={`https://wa.me/${whatsappNumber}?text=Hello%20S.K.%20Enterprises,%20I%20need%20a%20quote`} target="_blank" rel="noreferrer">WhatsApp quote</a>
+            <a className="whatsapp" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello S.K. Enterprises, I need a product quote.")}`} target="_blank" rel="noreferrer">
+              {t("quote")}
+            </a>
+            <button className="primary" onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}>
+              {t("browse")}
+            </button>
+            <a className="outline-light" href={mapsUrl} target="_blank" rel="noreferrer">Location</a>
           </div>
         </div>
       </section>
 
-      <section className="stats-row">
-        <div><b>5+</b><span>Years</span></div>
-        <div><b>1000+</b><span>Customers</span></div>
-        <div><b>100+</b><span>Contractors</span></div>
-        <div><b>Offline</b><span>Cash / UPI / WhatsApp</span></div>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <span className="pill">Featured</span>
-          <h2>Featured Products</h2>
-        </div>
-        <div className="product-grid">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} />
-          ))}
-        </div>
-      </section>
+      <TrustBar t={t} />
+      <BrandMarquee />
+      <StatsBar t={t} />
 
       <section className="section" id="products">
-        <div className="section-head">
-          <span className="pill">Catalog</span>
-          <h2>Products</h2>
-        </div>
+        <SectionHead kicker="Catalog" title={t("catalog")} sub={t("featuredSub")} />
         <div className="toolbar">
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search products, brand, category..." />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} />
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
             <option>All</option>
             {categories.map((item) => <option key={item}>{item}</option>)}
@@ -262,20 +535,93 @@ export function StorePage({ featured, products, categories, query, setQuery, cat
         </div>
         <div className="category-tabs">
           {["All", ...categories].map((item) => (
-            <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>
+            <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>
+              {item === "All" ? t("all") : item}
+            </button>
           ))}
         </div>
+        {!!featured.length && (
+          <>
+            <div className="subsection-label">{t("featured")}</div>
+            <div className="product-grid featured-grid">
+              {featured.map((product) => (
+                <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
+              ))}
+            </div>
+          </>
+        )}
         <div className="product-grid">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} />
+            <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
           ))}
         </div>
       </section>
+
+      <WhyUs t={t} />
+      <DealershipSection t={t} />
+      <ShowroomGallery gallery={gallery} t={t} />
+      <ReviewsSection t={t} />
+      <ContactSection t={t} submitLead={submitLead} />
     </main>
   );
 }
 
-function ProductCard({ product, addToCart, openDetail }) {
+function TrustBar({ t }) {
+  return (
+    <section className="trust-bar">
+      {[t("trust1"), t("trust2"), t("trust3"), t("trust4")].map((item) => (
+        <span key={item}>{item}</span>
+      ))}
+    </section>
+  );
+}
+
+function BrandMarquee() {
+  const items = [...brandTiles, ...brandTiles];
+  return (
+    <section className="brand-marquee" aria-label="Authorized brands">
+      <div className="marquee-track">
+        {items.map(([code, name, line], index) => (
+          <div className="brand-tile" key={`${name}-${index}`}>
+            <span>{code}</span>
+            <div>
+              <b>{name}</b>
+              <small>{line}</small>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatsBar({ t }) {
+  const stats = [
+    ["5+", t("stat1")],
+    ["1000+", t("stat2")],
+    ["100+", t("stat3")],
+    ["Cash / UPI", t("stat4")],
+  ];
+  return (
+    <section className="stats-row">
+      {stats.map(([num, label]) => (
+        <div key={label}><b>{num}</b><span>{label}</span></div>
+      ))}
+    </section>
+  );
+}
+
+function SectionHead({ kicker, title, sub }) {
+  return (
+    <div className="section-head">
+      <span className="pill">{kicker}</span>
+      <h2>{title}</h2>
+      {sub && <p>{sub}</p>}
+    </div>
+  );
+}
+
+function ProductCard({ product, addToCart, openDetail, t }) {
   return (
     <article className="product-card">
       <button className="image-button" onClick={() => openDetail(product)}>
@@ -286,17 +632,126 @@ function ProductCard({ product, addToCart, openDetail }) {
         <small>{product.category}</small>
         <h3>{product.name}</h3>
         <p>{product.brand}</p>
-        <b>{product.price ? `Rs ${product.price}` : "Ask for quote"}</b>
+        <b>{product.price ? `Rs ${product.price}` : t("askQuote")}</b>
       </div>
       <div className="card-actions">
-        <button onClick={() => openDetail(product)}>Details</button>
-        <button className="primary" onClick={() => addToCart(product)}>Add</button>
+        <button onClick={() => openDetail(product)}>{t("details")}</button>
+        <button className="primary" onClick={() => addToCart(product)}>{t("add")}</button>
       </div>
     </article>
   );
 }
 
-export function ProductDetail({ product, addToCart, back }) {
+function WhyUs({ t }) {
+  const items = [
+    [t("feature1Title"), t("feature1Text")],
+    [t("feature2Title"), t("feature2Text")],
+    [t("feature3Title"), t("feature3Text")],
+    [t("feature4Title"), t("feature4Text")],
+  ];
+  return (
+    <section className="section why-us" id="why">
+      <SectionHead kicker="Trust" title={t("whyTitle")} sub={t("whySub")} />
+      <div className="features-grid">
+        {items.map(([title, text], index) => (
+          <article className="feature-box" key={title}>
+            <span className="feature-num">0{index + 1}</span>
+            <h3>{title}</h3>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DealershipSection({ t }) {
+  return (
+    <section className="section dealership-section">
+      <SectionHead kicker="Authorized" title={t("dealership")} sub={t("dealershipSub")} />
+      <div className="certs-grid">
+        {dealershipPhotos.map((item) => (
+          <article className="cert-card" key={item.title}>
+            <img src={imageUrl(item.image_url)} alt={item.title} />
+            <b>{item.title}</b>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ShowroomGallery({ gallery, t }) {
+  const sorted = [...gallery].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+  return (
+    <section className="section gallery-section" id="gallery">
+      <SectionHead kicker="Showroom" title={t("gallery")} sub={t("gallerySub")} />
+      <div className="gallery-grid">
+        {sorted.map((item) => (
+          <article className="gallery-card" key={item.id || item.image_url}>
+            <img src={imageUrl(item.image_url)} alt={item.title} />
+            <div>
+              <b>{item.title}</b>
+              <p>{item.caption}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ReviewsSection({ t }) {
+  return (
+    <section className="section reviews-section">
+      <SectionHead kicker="Reviews" title={t("reviews")} sub={t("reviewsSub")} />
+      <div className="reviews-grid">
+        {reviews.map((review) => (
+          <article className="review-card" key={review.name}>
+            <div className="stars">★★★★★</div>
+            <p>{review.text}</p>
+            <b>{review.name}</b>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ContactSection({ t, submitLead }) {
+  return (
+    <section className="section contact-section" id="contact">
+      <div className="contact-copy">
+        <span className="pill">Contact</span>
+        <h2>{t("contactTitle")}</h2>
+        <p>{t("contactSub")}</p>
+        <div className="quick-links">
+          <a className="whatsapp" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello S.K. Enterprises, I need a quote.")}`} target="_blank" rel="noreferrer">WhatsApp</a>
+          <a className="call-link" href={`tel:+${callNumber}`}>Call</a>
+          <a className="map-link" href={mapsUrl} target="_blank" rel="noreferrer">Location</a>
+        </div>
+        <div className="contact-card">
+          <b>{t("address")}</b>
+          <span>{t("plusCode")}</span>
+          <a href={mapsUrl} target="_blank" rel="noreferrer">Open Google Maps</a>
+        </div>
+      </div>
+      <form className="panel-form lead-form" onSubmit={(event) => { event.preventDefault(); submitLead(event.currentTarget); }}>
+        <h3>{t("formTitle")}</h3>
+        <input name="name" placeholder={t("formName")} required />
+        <input name="phone" placeholder={t("formPhone")} required />
+        <select name="category" defaultValue="">
+          <option value="">{t("formCategory")}</option>
+          {defaultCategories.map((item) => <option key={item}>{item}</option>)}
+        </select>
+        <textarea name="message" placeholder={t("formMessage")} required />
+        <button className="primary">{t("formButton")}</button>
+      </form>
+    </section>
+  );
+}
+
+export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[key] || key }) {
   const [qty, setQty] = useState(1);
   return (
     <main className="section detail-layout">
@@ -308,7 +763,7 @@ export function ProductDetail({ product, addToCart, back }) {
         <p>{product.description}</p>
         <dl>
           <div><dt>Brand</dt><dd>{product.brand || "-"}</dd></div>
-          <div><dt>Price</dt><dd>{product.price ? `Rs ${product.price}` : "Final rate on WhatsApp / store"}</dd></div>
+          <div><dt>Price</dt><dd>{product.price ? `Rs ${product.price}` : t("finalRate")}</dd></div>
           <div><dt>MRP</dt><dd>{product.mrp ? `Rs ${product.mrp}` : "-"}</dd></div>
           <div><dt>Stock</dt><dd>{product.stock}</dd></div>
           <div><dt>Warranty</dt><dd>{product.warranty || "-"}</dd></div>
@@ -317,14 +772,14 @@ export function ProductDetail({ product, addToCart, back }) {
           <button onClick={() => setQty(Math.max(1, qty - 1))}>-</button>
           <b>{qty}</b>
           <button onClick={() => setQty(qty + 1)}>+</button>
-          <button className="primary" onClick={() => addToCart(product, qty)}>Add to Cart</button>
+          <button className="primary" onClick={() => addToCart(product, qty)}>{t("addCart")}</button>
         </div>
       </div>
     </main>
   );
 }
 
-export function CartPage({ cart, updateQty, setPage }) {
+export function CartPage({ cart, updateQty, setPage, t = (key) => copy.en[key] || key }) {
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   return (
     <main className="section narrow">
@@ -332,7 +787,7 @@ export function CartPage({ cart, updateQty, setPage }) {
         <span className="pill">Cart</span>
         <h1>Your Cart</h1>
       </div>
-      {!cart.length && <Empty message="Cart is empty. Add products first." />}
+      {!cart.length && <Empty message={t("emptyCart")} />}
       {cart.map((item) => (
         <div className="cart-line" key={item.product_id}>
           <img src={imageUrl(item.image_url)} alt={item.name} />
@@ -349,7 +804,7 @@ export function CartPage({ cart, updateQty, setPage }) {
       ))}
       <div className="checkout-bar">
         <strong>{total ? `Approx total: Rs ${total}` : "Final rate will be confirmed offline"}</strong>
-        <button className="primary" disabled={!cart.length} onClick={() => setPage("checkout")}>Checkout</button>
+        <button className="primary" disabled={!cart.length} onClick={() => setPage("checkout")}>{t("checkout")}</button>
       </div>
     </main>
   );
@@ -410,7 +865,7 @@ export function LoginPage({ onAuth }) {
         {mode === "login" ? "New customer? Register" : "Already registered? Login"}
       </button>
       <div className="hint-box">
-        Owner seed login: phone 7007062590, password Owner@12345. Change this after setup.
+        Owner seed login: phone 7007062590. Change the seeded password after setup.
       </div>
     </main>
   );
@@ -454,7 +909,9 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [gallery, setGallery] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [editingGallery, setEditingGallery] = useState(null);
   const [message, setMessage] = useState("");
 
   const canDelete = ["owner", "admin"].includes(auth?.user?.role);
@@ -466,16 +923,18 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   }, [auth]);
 
   async function refreshAdmin() {
-    const [stats, productRows, orderRows, leadRows] = await Promise.all([
+    const [stats, productRows, orderRows, leadRows, galleryRows] = await Promise.all([
       api.dashboard(auth.token),
       api.getProducts(),
       api.adminOrders(auth.token),
       api.adminLeads(auth.token),
+      api.getGallery(),
     ]);
     setDashboard(stats);
     setProducts(productRows);
     setOrders(orderRows);
     setLeads(leadRows);
+    setGallery(galleryRows);
     reloadCatalog();
   }
 
@@ -517,9 +976,38 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     refreshAdmin();
   }
 
+  async function saveGalleryItem(form) {
+    const fd = new FormData(form);
+    let imageUrlValue = fd.get("image_url") || "";
+    const imageFile = fd.get("image_file");
+    if (imageFile && imageFile.size) {
+      const upload = await api.uploadImage(imageFile, auth.token);
+      imageUrlValue = upload.image_url;
+    }
+    const payload = {
+      title: fd.get("title"),
+      caption: fd.get("caption"),
+      image_url: imageUrlValue,
+      position: Number(fd.get("position") || 0),
+      active: true,
+    };
+    if (editingGallery?.id) await api.updateGalleryItem(editingGallery.id, payload, auth.token);
+    else await api.createGalleryItem(payload, auth.token);
+    setEditingGallery(null);
+    form.reset();
+    setMessage("Gallery photo saved");
+    refreshAdmin();
+  }
+
   async function deleteProduct(id) {
     await api.deleteProduct(id, auth.token);
     setMessage("Product deleted");
+    refreshAdmin();
+  }
+
+  async function deleteGalleryItem(id) {
+    await api.deleteGalleryItem(id, auth.token);
+    setMessage("Gallery photo deleted");
     refreshAdmin();
   }
 
@@ -545,7 +1033,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
       <aside className="admin-menu">
         <b>Admin Panel</b>
         <small>{auth.user.role} access</small>
-        {["dashboard", "products", "orders", "leads", "staff"].map((item) => (
+        {["dashboard", "products", "gallery", "orders", "leads", "staff"].map((item) => (
           <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{item}</button>
         ))}
       </aside>
@@ -562,6 +1050,16 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
             canDelete={canDelete}
           />
         )}
+        {tab === "gallery" && (
+          <GalleryAdmin
+            gallery={gallery}
+            editing={editingGallery}
+            setEditing={setEditingGallery}
+            saveGalleryItem={saveGalleryItem}
+            deleteGalleryItem={deleteGalleryItem}
+            canDelete={canDelete}
+          />
+        )}
         {tab === "orders" && <OrdersAdmin orders={orders} updateOrder={updateOrder} />}
         {tab === "leads" && <LeadsAdmin leads={leads} updateLead={updateLead} />}
         {tab === "staff" && (
@@ -573,7 +1071,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
 }
 
 function Dashboard({ stats }) {
-  const items = stats || { products: 0, orders: 0, new_orders: 0, leads: 0, customers: 0 };
+  const items = stats || { products: 0, orders: 0, new_orders: 0, leads: 0, gallery: 0, customers: 0 };
   return (
     <>
       <div className="section-head"><span className="pill">Dashboard</span><h1>Business Overview</h1></div>
@@ -619,6 +1117,36 @@ function ProductsAdmin({ products, editing, setEditing, saveProduct, deleteProdu
             <span>Stock {item.stock}</span>
             <button onClick={() => setEditing(item)}>Edit</button>
             {canDelete && <button className="danger" onClick={() => deleteProduct(item.id)}>Delete</button>}
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGalleryItem, canDelete }) {
+  const item = editing || emptyGalleryItem;
+  return (
+    <>
+      <div className="section-head"><span className="pill">Showroom</span><h1>Add / Edit Gallery Photo</h1></div>
+      <form key={editing?.id || "new-gallery"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveGalleryItem(event.currentTarget); }}>
+        <input name="title" defaultValue={item.title} placeholder="Photo title" required />
+        <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        <div className="two-col">
+          <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
+          <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+        </div>
+        <input name="image_file" type="file" accept="image/*" capture="environment" />
+        <button className="primary">{editing ? "Update Photo" : "Save Photo"}</button>
+      </form>
+      <div className="table-list">
+        {gallery.map((row) => (
+          <article className="admin-row gallery-admin-row" key={row.id}>
+            <img src={imageUrl(row.image_url)} alt={row.title} />
+            <div><b>{row.title}</b><small>{row.caption || "No caption"}</small></div>
+            <span>Order {row.position || 0}</span>
+            <button onClick={() => setEditing(row)}>Edit</button>
+            {canDelete && <button className="danger" onClick={() => deleteGalleryItem(row.id)}>Delete</button>}
           </article>
         ))}
       </div>
@@ -684,16 +1212,28 @@ function StaffAdmin({ createStaff }) {
   );
 }
 
+function FloatingLinks() {
+  return (
+    <div className="float-links" aria-label="Quick contact links">
+      <a className="wa" href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer">WA</a>
+      <a className="call" href={`tel:+${callNumber}`}>Call</a>
+      <a className="map" href={mapsUrl} target="_blank" rel="noreferrer">Map</a>
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer>
       <div>
         <b>S.K. Enterprises</b>
         <span>Kanihar Road, Saray Taki, Prayagraj</span>
+        <small>Authorized dealer: ESSEL, Birla Pivot, Roff by Pidilite, Supreme, Ashirvad, Cera, Hindware, Sintex.</small>
       </div>
       <div>
         <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp 94152 16320</a>
-        <a href="tel:+917007062590">Call 70070 62590</a>
+        <a href={`tel:+${callNumber}`}>Call 70070 62590</a>
+        <a href={mapsUrl} target="_blank" rel="noreferrer">Location CW9J+CF</a>
       </div>
     </footer>
   );

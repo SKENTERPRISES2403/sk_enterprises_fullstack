@@ -138,6 +138,45 @@ PRODUCTS = [
     },
 ]
 
+GALLERY = [
+    {
+        "title": "Showroom Exterior",
+        "caption": "S.K. Enterprises storefront on Kanihar Road.",
+        "image_url": "/uploads/shop.jpg",
+        "position": 1,
+    },
+    {
+        "title": "Sanitaryware Display",
+        "caption": "Premium CP fittings, sanitaryware and bathroom display.",
+        "image_url": "/uploads/gallery2.jpg",
+        "position": 2,
+    },
+    {
+        "title": "Tiles and Bath Collection",
+        "caption": "Floor tiles, wall tiles and bathroom product range.",
+        "image_url": "/uploads/tile_samples.jpg",
+        "position": 3,
+    },
+    {
+        "title": "Dealership Wall",
+        "caption": "Authorized dealer boards and brand display.",
+        "image_url": "/uploads/showroom_wall.jpg",
+        "position": 4,
+    },
+    {
+        "title": "CP Fittings Range",
+        "caption": "ESSEL, TOYO and premium tap collections.",
+        "image_url": "/uploads/essel_taps2.jpg",
+        "position": 5,
+    },
+    {
+        "title": "Construction Chemicals",
+        "caption": "Roff by Pidilite tile adhesive and project materials.",
+        "image_url": "/uploads/roff.jpg",
+        "position": 6,
+    },
+]
+
 
 async def seed_database(db) -> None:
     settings = get_settings()
@@ -157,6 +196,13 @@ async def seed_database(db) -> None:
             upsert=True,
         )
 
+    for item in GALLERY:
+        await db.gallery.update_one(
+            {"title": item["title"]},
+            {"$setOnInsert": {**item, "active": True, "created_at": now, "updated_at": now}},
+            upsert=True,
+        )
+
     owner = await db.users.find_one({"phone": settings.seed_owner_phone})
     if owner is None:
         await db.users.insert_one({
@@ -168,4 +214,3 @@ async def seed_database(db) -> None:
             "created_at": now,
             "updated_at": now,
         })
-

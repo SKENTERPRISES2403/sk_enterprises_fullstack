@@ -79,3 +79,10 @@ class LeadIn(BaseModel):
 class LeadStatusIn(BaseModel):
     status: LeadStatus
 
+
+class GalleryIn(BaseModel):
+    title: str
+    caption: str = ""
+    image_url: str
+    position: int = 0
+    active: bool = True

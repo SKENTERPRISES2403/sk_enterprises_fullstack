@@ -13,6 +13,7 @@ from .db import close_mongo, connect_to_mongo, get_db
 from .image_upload import upload_image
 from .schemas import (
     AddressIn,
+    GalleryIn,
     LeadIn,
     LeadStatusIn,
     LoginIn,
@@ -147,6 +148,43 @@ async def create_staff(payload: StaffCreateIn, _: dict[str, Any] = Depends(requi
 async def categories() -> list[dict[str, Any]]:
     cursor = get_db().categories.find({"active": {"$ne": False}}).sort("name", 1)
     return [doc_id(doc) async for doc in cursor]
+
+
+@app.get("/api/gallery")
+async def gallery() -> list[dict[str, Any]]:
+    cursor = get_db().gallery.find({"active": {"$ne": False}}).sort([("position", 1), ("created_at", -1)])
+    return [doc_id(doc) async for doc in cursor]
+
+
+@app.post("/api/admin/gallery")
+async def create_gallery_item(payload: GalleryIn, _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff"))) -> dict[str, Any]:
+    doc = payload.model_dump()
+    doc.update({"created_at": now_iso(), "updated_at": now_iso()})
+    result = await get_db().gallery.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc_id(doc)
+
+
+@app.put("/api/admin/gallery/{gallery_id}")
+async def update_gallery_item(gallery_id: str, payload: GalleryIn, _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff"))) -> dict[str, Any]:
+    updates = payload.model_dump()
+    updates["updated_at"] = now_iso()
+    result = await get_db().gallery.find_one_and_update(
+        {"_id": oid(gallery_id)},
+        {"$set": updates},
+        return_document=True,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Gallery item not found")
+    return doc_id(result)
+
+
+@app.delete("/api/admin/gallery/{gallery_id}")
+async def delete_gallery_item(gallery_id: str, _: dict[str, Any] = Depends(require_roles("owner", "admin"))) -> dict[str, bool]:
+    result = await get_db().gallery.update_one({"_id": oid(gallery_id)}, {"$set": {"active": False, "updated_at": now_iso()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Gallery item not found")
+    return {"ok": True}
 
 
 @app.get("/api/products")
@@ -337,5 +375,6 @@ async def dashboard(_: dict[str, Any] = Depends(require_roles("owner", "admin", 
         "orders": await db.orders.count_documents({}),
         "new_orders": await db.orders.count_documents({"status": "New Order"}),
         "leads": await db.leads.count_documents({}),
+        "gallery": await db.gallery.count_documents({"active": {"$ne": False}}),
         "customers": await db.users.count_documents({"role": "customer"}),
     }
