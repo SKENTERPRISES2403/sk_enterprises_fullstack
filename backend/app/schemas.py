@@ -86,3 +86,12 @@ class GalleryIn(BaseModel):
     image_url: str
     position: int = 0
     active: bool = True
+
+
+class CertificateIn(BaseModel):
+    title: str
+    brand: str = ""
+    caption: str = ""
+    image_url: str
+    position: int = 0
+    active: bool = True

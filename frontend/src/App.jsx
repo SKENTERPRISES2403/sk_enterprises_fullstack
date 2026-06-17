@@ -4,12 +4,15 @@ import {
   api,
   imageUrl,
   demoProducts,
+  defaultCertificates,
   defaultGallery,
   orderStatuses,
   leadStatuses,
   categories as defaultCategories,
   whatsappNumber,
   callNumber,
+  alternateCallNumber,
+  gstin,
   mapsUrl,
 } from "./api";
 
@@ -35,35 +38,39 @@ const emptyGalleryItem = {
   active: true,
 };
 
-const brandTiles = [
-  ["ES", "ESSEL BATH FITTINGS", "Authorized CP fittings"],
-  ["BP", "BIRLA PIVOT", "Sanitaryware partner"],
-  ["RF", "ROFF by PIDILITE", "Tile and stone fixing"],
-  ["SP", "SUPREME PIPES", "Plumbing systems"],
-  ["AP", "ASHIRVAD PIPES", "CPVC and UPVC"],
-  ["CR", "CERA", "Bath solutions"],
-  ["HW", "HINDWARE", "Sanitaryware"],
-  ["SX", "SINTEX", "Water tanks"],
-];
+const emptyCertificateItem = {
+  title: "",
+  brand: "",
+  caption: "",
+  image_url: "",
+  position: 0,
+  active: true,
+};
 
-const dealershipPhotos = [
-  { title: "ESSEL Authorized Dealership", image_url: "/assets/essel_cert.jpg" },
-  { title: "Roff by Pidilite Display", image_url: "/assets/roff_cert.jpg" },
-  { title: "Birla Pivot Stock", image_url: "/assets/birla_pivot_stock.jpg" },
+const brandTiles = [
+  { name: "ESSEL BATH FITTINGS", line: "Authorized CP fittings", logo: "/assets/brands/essel-logo.png" },
+  { name: "BIRLA PIVOT", line: "Sanitaryware partner", logo: "/assets/brands/birla-pivot-logo.jpg" },
+  { name: "ROFF by PIDILITE", line: "Tile and stone fixing", logo: "/assets/brands/roff-logo.png" },
+  { name: "SUPREME PIPES", line: "Plumbing systems", logo: "/assets/brands/supreme-logo.png" },
+  { name: "ASHIRVAD PIPES", line: "CPVC and UPVC", logo: "/assets/brands/ashirvad-logo.png" },
+  { name: "CERA", line: "Bath solutions", logo: "/assets/brands/cera-logo.png" },
+  { name: "HINDWARE", line: "Sanitaryware", logo: "/assets/brands/hindware-logo.png" },
+  { name: "SINTEX", line: "Water tanks", logo: "/assets/brands/sintex-logo.png" },
+  { name: "ARALDITE", line: "Epoxy adhesive", logo: "/assets/brands/araldite-logo.png" },
 ];
 
 const reviews = [
   {
     name: "Dheeraj Pandey",
-    text: "Bathroom fittings aur tiles ke liye genuine rate mila. Staff ne product compare karke sahi option suggest kiya.",
+    text: "Shopkeeper ka nature bahut accha hai. ESSEL fittings genuine rate par mile aur warranty card ke saath proper guidance bhi mili.",
   },
   {
     name: "Vivek Mishra",
-    text: "Site delivery time par hui. Supreme pipes aur Roff material dono original packing me mile.",
+    text: "Mere ghar ke bathroom ke liye tiles, sanitary aur Roff material yahin se liya. Rate clear tha aur delivery bhi time par ho gayi.",
   },
   {
     name: "Ramesh Gupta",
-    text: "Prayagraj me sanitaryware ka range accha hai. Quote clear tha aur billing bhi proper GST ke saath mili.",
+    text: "Builder work ke liye Supreme pipes aur bath fittings chahiye the. Bulk quantity par achha price mila aur GST bill bhi proper mila.",
   },
 ];
 
@@ -97,14 +104,18 @@ const copy = {
     search: "Search products, brand, category...",
     whyTitle: "Why S.K. Enterprises?",
     whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
-    feature1Title: "Original Brands",
-    feature1Text: "Authorized supply for ESSEL, Birla Pivot, Roff, Supreme, Ashirvad and more.",
-    feature2Title: "Wholesale Support",
-    feature2Text: "Retail and bulk order pricing with GST billing for sites and contractors.",
-    feature3Title: "Site Delivery",
-    feature3Text: "Local delivery support for homes, shops and construction sites across Prayagraj.",
-    feature4Title: "Practical Guidance",
-    feature4Text: "Product suggestions based on budget, warranty, plumbing needs and site use.",
+    feature1Title: "Genuine Products",
+    feature1Text: "100% original company supplied products.",
+    feature2Title: "Wholesale Pricing",
+    feature2Text: "Best market price for retail and bulk orders.",
+    feature3Title: "Fast Delivery",
+    feature3Text: "Quick material delivery directly to your site.",
+    feature4Title: "GST Billing",
+    feature4Text: "Transparent pricing with proper GST invoices.",
+    feature5Title: "Contractor Support",
+    feature5Text: "Special priority processing for builders and plumbers.",
+    feature6Title: "Authorized Dealer",
+    feature6Text: "Official dealer for top brands ensuring full warranty.",
     dealership: "Dealership & Brand Proof",
     dealershipSub: "Real dealership boards, certificates and stock photos from the showroom.",
     gallery: "Showroom Gallery",
@@ -159,14 +170,18 @@ const copy = {
     search: "प्रोडक्ट, ब्रांड, कैटेगरी खोजें...",
     whyTitle: "Why S.K. Enterprises?",
     whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
-    feature1Title: "ओरिजिनल ब्रांड",
-    feature1Text: "ESSEL, Birla Pivot, Roff, Supreme, Ashirvad और अन्य ब्रांड की अधिकृत सप्लाई।",
-    feature2Title: "थोक सपोर्ट",
-    feature2Text: "रिटेल और बल्क ऑर्डर के लिए GST बिलिंग के साथ सही रेट।",
-    feature3Title: "साइट डिलीवरी",
-    feature3Text: "प्रयागराज में घर और कंस्ट्रक्शन साइट तक डिलीवरी सपोर्ट।",
-    feature4Title: "सही सलाह",
-    feature4Text: "बजट, वारंटी और साइट जरूरत के हिसाब से प्रोडक्ट सुझाव।",
+    feature1Title: "Genuine Products",
+    feature1Text: "100% original company supplied products.",
+    feature2Title: "Wholesale Pricing",
+    feature2Text: "Best market price for retail and bulk orders.",
+    feature3Title: "Fast Delivery",
+    feature3Text: "Quick material delivery directly to your site.",
+    feature4Title: "GST Billing",
+    feature4Text: "Transparent pricing with proper GST invoices.",
+    feature5Title: "Contractor Support",
+    feature5Text: "Special priority processing for builders and plumbers.",
+    feature6Title: "Authorized Dealer",
+    feature6Text: "Official dealer for top brands ensuring full warranty.",
     dealership: "डीलरशिप और ब्रांड प्रूफ",
     dealershipSub: "शोरूम के रियल बोर्ड, सर्टिफिकेट और स्टॉक फोटो।",
     gallery: "शोरूम गैलरी",
@@ -220,15 +235,19 @@ const copy = {
     catalog: "प्रोडक्ट कैटलॉग",
     search: "प्रोडक्ट, ब्रांड, कैटेगरी खोजीं...",
     whyTitle: "Why S.K. Enterprises?",
-    whySub: "हमारा विश्वास सिर्फ सामान बेचने में नहीं, रिश्ते बनाने में है।",
-    feature1Title: "असली ब्रांड",
-    feature1Text: "ESSEL, Birla Pivot, Roff, Supreme, Ashirvad आ अउरी ब्रांड के अधिकृत सप्लाई।",
-    feature2Title: "थोक सपोर्ट",
-    feature2Text: "रिटेल आ थोक ऑर्डर खातिर GST बिलिंग के साथे बढ़िया रेट।",
-    feature3Title: "साइट डिलीवरी",
-    feature3Text: "प्रयागराज में घर आ साइट तक डिलीवरी सपोर्ट।",
-    feature4Title: "सही सलाह",
-    feature4Text: "बजट, वारंटी आ साइट के जरूरत हिसाब से सामान बतावल जाला।",
+    whySub: "हमनी के भरोसा खाली सामान बेचे में ना, रिश्ता बनावे में बा।",
+    feature1Title: "Genuine Products",
+    feature1Text: "100% original company supplied products.",
+    feature2Title: "Wholesale Pricing",
+    feature2Text: "Best market price for retail and bulk orders.",
+    feature3Title: "Fast Delivery",
+    feature3Text: "Quick material delivery directly to your site.",
+    feature4Title: "GST Billing",
+    feature4Text: "Transparent pricing with proper GST invoices.",
+    feature5Title: "Contractor Support",
+    feature5Text: "Special priority processing for builders and plumbers.",
+    feature6Title: "Authorized Dealer",
+    feature6Text: "Official dealer for top brands ensuring full warranty.",
     dealership: "डीलरशिप आ ब्रांड प्रूफ",
     dealershipSub: "शोरूम के असली बोर्ड, सर्टिफिकेट आ स्टॉक फोटो।",
     gallery: "शोरूम गैलरी",
@@ -261,6 +280,7 @@ function App() {
   const [lang, setLang] = useLocalStorage("sk_lang", "en");
   const [products, setProducts] = useState([]);
   const [gallery, setGallery] = useState(defaultGallery);
+  const [certificates, setCertificates] = useState(defaultCertificates);
   const [categories, setCategories] = useState(defaultCategories);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
@@ -281,18 +301,21 @@ function App() {
 
   async function loadCatalog() {
     try {
-      const [productRows, categoryRows, galleryRows] = await Promise.all([
+      const [productRows, categoryRows, galleryRows, certificateRows] = await Promise.all([
         api.getProducts(),
         api.getCategories(),
         api.getGallery(),
+        api.getCertificates(),
       ]);
       setProducts(productRows.length ? productRows : demoProducts);
       setCategories(categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories);
       setGallery(galleryRows.length ? galleryRows : defaultGallery);
+      setCertificates(certificateRows.length ? certificateRows : defaultCertificates);
     } catch {
       setProducts(demoProducts);
       setCategories(defaultCategories);
       setGallery(defaultGallery);
+      setCertificates(defaultCertificates);
       setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
     }
   }
@@ -403,6 +426,7 @@ function App() {
           featured={featured}
           products={visibleProducts}
           gallery={gallery}
+          certificates={certificates}
           categories={categories}
           query={query}
           setQuery={setQuery}
@@ -442,7 +466,7 @@ function App() {
       )}
 
       <FloatingLinks />
-      <Footer />
+      <Footer setPage={setPage} />
     </>
   );
 }
@@ -492,6 +516,7 @@ export function StorePage({
   featured,
   products,
   gallery,
+  certificates,
   categories,
   query,
   setQuery,
@@ -558,7 +583,7 @@ export function StorePage({
       </section>
 
       <WhyUs t={t} />
-      <DealershipSection t={t} />
+      <DealershipSection t={t} certificates={certificates} />
       <ShowroomGallery gallery={gallery} t={t} />
       <ReviewsSection t={t} />
       <ContactSection t={t} submitLead={submitLead} />
@@ -581,12 +606,12 @@ function BrandMarquee() {
   return (
     <section className="brand-marquee" aria-label="Authorized brands">
       <div className="marquee-track">
-        {items.map(([code, name, line], index) => (
-          <div className="brand-tile" key={`${name}-${index}`}>
-            <span>{code}</span>
+        {items.map((brand, index) => (
+          <div className="brand-tile" key={`${brand.name}-${index}`}>
+            <span><img src={brand.logo} alt={`${brand.name} logo`} /></span>
             <div>
-              <b>{name}</b>
-              <small>{line}</small>
+              <b>{brand.name}</b>
+              <small>{brand.line}</small>
             </div>
           </div>
         ))}
@@ -597,18 +622,35 @@ function BrandMarquee() {
 
 function StatsBar({ t }) {
   const stats = [
-    ["5+", t("stat1")],
-    ["1000+", t("stat2")],
-    ["100+", t("stat3")],
+    [{ target: 5, suffix: "+" }, t("stat1")],
+    [{ target: 1000, suffix: "+" }, t("stat2")],
+    [{ target: 100, suffix: "+" }, t("stat3")],
     ["Cash / UPI", t("stat4")],
   ];
   return (
     <section className="stats-row">
-      {stats.map(([num, label]) => (
-        <div key={label}><b>{num}</b><span>{label}</span></div>
+      {stats.map(([value, label]) => (
+        <div key={label}><b>{typeof value === "string" ? value : <AnimatedCounter {...value} />}</b><span>{label}</span></div>
       ))}
     </section>
   );
+}
+
+function AnimatedCounter({ target, suffix = "" }) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const totalFrames = 42;
+    const timer = window.setInterval(() => {
+      frame += 1;
+      const progress = Math.min(frame / totalFrames, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
+      if (progress >= 1) window.clearInterval(timer);
+    }, 22);
+    return () => window.clearInterval(timer);
+  }, [target]);
+  return <>{value}{suffix}</>;
 }
 
 function SectionHead({ kicker, title, sub }) {
@@ -644,18 +686,21 @@ function ProductCard({ product, addToCart, openDetail, t }) {
 
 function WhyUs({ t }) {
   const items = [
-    [t("feature1Title"), t("feature1Text")],
-    [t("feature2Title"), t("feature2Text")],
-    [t("feature3Title"), t("feature3Text")],
-    [t("feature4Title"), t("feature4Text")],
+    ["📜", t("feature1Title"), t("feature1Text")],
+    ["💰", t("feature2Title"), t("feature2Text")],
+    ["🚚", t("feature3Title"), t("feature3Text")],
+    ["🧾", t("feature4Title"), t("feature4Text")],
+    ["🏗️", t("feature5Title"), t("feature5Text")],
+    ["✅", t("feature6Title"), t("feature6Text")],
   ];
   return (
     <section className="section why-us" id="why">
-      <SectionHead kicker="Trust" title={t("whyTitle")} sub={t("whySub")} />
+      <SectionHead kicker="Trust" title={t("whyTitle")} />
+      <div className="quote-box">{t("whySub")}</div>
       <div className="features-grid">
-        {items.map(([title, text], index) => (
+        {items.map(([icon, title, text]) => (
           <article className="feature-box" key={title}>
-            <span className="feature-num">0{index + 1}</span>
+            <span className="feature-icon">{icon}</span>
             <h3>{title}</h3>
             <p>{text}</p>
           </article>
@@ -665,15 +710,19 @@ function WhyUs({ t }) {
   );
 }
 
-function DealershipSection({ t }) {
+function DealershipSection({ t, certificates }) {
+  const sorted = [...certificates].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
   return (
     <section className="section dealership-section">
       <SectionHead kicker="Authorized" title={t("dealership")} sub={t("dealershipSub")} />
       <div className="certs-grid">
-        {dealershipPhotos.map((item) => (
+        {sorted.map((item) => (
           <article className="cert-card" key={item.title}>
             <img src={imageUrl(item.image_url)} alt={item.title} />
-            <b>{item.title}</b>
+            <div>
+              <b>{item.title}</b>
+              <small>{item.brand || item.caption}</small>
+            </div>
           </article>
         ))}
       </div>
@@ -910,8 +959,10 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   const [orders, setOrders] = useState([]);
   const [leads, setLeads] = useState([]);
   const [gallery, setGallery] = useState([]);
+  const [certificates, setCertificates] = useState([]);
   const [editing, setEditing] = useState(null);
   const [editingGallery, setEditingGallery] = useState(null);
+  const [editingCertificate, setEditingCertificate] = useState(null);
   const [message, setMessage] = useState("");
 
   const canDelete = ["owner", "admin"].includes(auth?.user?.role);
@@ -923,18 +974,20 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   }, [auth]);
 
   async function refreshAdmin() {
-    const [stats, productRows, orderRows, leadRows, galleryRows] = await Promise.all([
+    const [stats, productRows, orderRows, leadRows, galleryRows, certificateRows] = await Promise.all([
       api.dashboard(auth.token),
       api.getProducts(),
       api.adminOrders(auth.token),
       api.adminLeads(auth.token),
       api.getGallery(),
+      api.getCertificates(),
     ]);
     setDashboard(stats);
     setProducts(productRows);
     setOrders(orderRows);
     setLeads(leadRows);
     setGallery(galleryRows);
+    setCertificates(certificateRows);
     reloadCatalog();
   }
 
@@ -999,6 +1052,30 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     refreshAdmin();
   }
 
+  async function saveCertificate(form) {
+    const fd = new FormData(form);
+    let imageUrlValue = fd.get("image_url") || "";
+    const imageFile = fd.get("image_file");
+    if (imageFile && imageFile.size) {
+      const upload = await api.uploadImage(imageFile, auth.token);
+      imageUrlValue = upload.image_url;
+    }
+    const payload = {
+      title: fd.get("title"),
+      brand: fd.get("brand"),
+      caption: fd.get("caption"),
+      image_url: imageUrlValue,
+      position: Number(fd.get("position") || 0),
+      active: true,
+    };
+    if (editingCertificate?.id) await api.updateCertificate(editingCertificate.id, payload, auth.token);
+    else await api.createCertificate(payload, auth.token);
+    setEditingCertificate(null);
+    form.reset();
+    setMessage("Certificate saved");
+    refreshAdmin();
+  }
+
   async function deleteProduct(id) {
     await api.deleteProduct(id, auth.token);
     setMessage("Product deleted");
@@ -1008,6 +1085,12 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function deleteGalleryItem(id) {
     await api.deleteGalleryItem(id, auth.token);
     setMessage("Gallery photo deleted");
+    refreshAdmin();
+  }
+
+  async function deleteCertificate(id) {
+    await api.deleteCertificate(id, auth.token);
+    setMessage("Certificate deleted");
     refreshAdmin();
   }
 
@@ -1028,12 +1111,21 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     form.reset();
   }
 
+  const menuItems = [
+    "dashboard",
+    "products",
+    ...(canDelete ? ["certificates", "gallery"] : []),
+    "orders",
+    "leads",
+    ...(canCreateStaff ? ["staff"] : []),
+  ];
+
   return (
     <main className="admin-shell">
       <aside className="admin-menu">
         <b>Admin Panel</b>
         <small>{auth.user.role} access</small>
-        {["dashboard", "products", "gallery", "orders", "leads", "staff"].map((item) => (
+        {menuItems.map((item) => (
           <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>{item}</button>
         ))}
       </aside>
@@ -1057,6 +1149,16 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
             setEditing={setEditingGallery}
             saveGalleryItem={saveGalleryItem}
             deleteGalleryItem={deleteGalleryItem}
+            canDelete={canDelete}
+          />
+        )}
+        {tab === "certificates" && (
+          <CertificatesAdmin
+            certificates={certificates}
+            editing={editingCertificate}
+            setEditing={setEditingCertificate}
+            saveCertificate={saveCertificate}
+            deleteCertificate={deleteCertificate}
             canDelete={canDelete}
           />
         )}
@@ -1154,6 +1256,37 @@ function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGal
   );
 }
 
+function CertificatesAdmin({ certificates, editing, setEditing, saveCertificate, deleteCertificate, canDelete }) {
+  const item = editing || emptyCertificateItem;
+  return (
+    <>
+      <div className="section-head"><span className="pill">Certificates</span><h1>Add / Edit Dealership Proof</h1></div>
+      <form key={editing?.id || "new-certificate"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveCertificate(event.currentTarget); }}>
+        <input name="title" defaultValue={item.title} placeholder="Certificate title" required />
+        <input name="brand" defaultValue={item.brand} placeholder="Brand / company name" />
+        <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        <div className="two-col">
+          <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
+          <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+        </div>
+        <input name="image_file" type="file" accept="image/*" capture="environment" />
+        <button className="primary">{editing ? "Update Certificate" : "Save Certificate"}</button>
+      </form>
+      <div className="table-list">
+        {certificates.map((row) => (
+          <article className="admin-row certificate-admin-row" key={row.id}>
+            <img src={imageUrl(row.image_url)} alt={row.title} />
+            <div><b>{row.title}</b><small>{row.brand || row.caption || "No caption"}</small></div>
+            <span>Order {row.position || 0}</span>
+            <button onClick={() => setEditing(row)}>Edit</button>
+            {canDelete && <button className="danger" onClick={() => deleteCertificate(row.id)}>Delete</button>}
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
 function OrdersAdmin({ orders, updateOrder }) {
   return (
     <>
@@ -1222,19 +1355,36 @@ function FloatingLinks() {
   );
 }
 
-function Footer() {
+function Footer({ setPage }) {
+  const jumpTo = (id) => {
+    setPage("store");
+    window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
+
   return (
-    <footer>
-      <div>
-        <b>S.K. Enterprises</b>
-        <span>Kanihar Road, Saray Taki, Prayagraj</span>
-        <small>Authorized dealer: ESSEL, Birla Pivot, Roff by Pidilite, Supreme, Ashirvad, Cera, Hindware, Sintex.</small>
+    <footer className="site-footer">
+      <div className="footer-main">
+        <div className="footer-brand">
+          <b>S.K. ENTERPRISES</b>
+          <p>Prayagraj's trusted hardware and sanitary store. Authorized dealers of ESSEL, Birla Pivot, Roff, Supreme.</p>
+          <small>GSTIN: {gstin}</small>
+        </div>
+        <div className="footer-col">
+          <b>Quick Links</b>
+          <button onClick={() => jumpTo("products")}>Products</button>
+          <button onClick={() => jumpTo("why")}>Contractors</button>
+          <button onClick={() => jumpTo("gallery")}>Gallery</button>
+          <button onClick={() => jumpTo("contact")}>Contact</button>
+        </div>
+        <div className="footer-col">
+          <b>Contact Us</b>
+          <span>📍 Kanihar Road, Saray Taki<br />Prayagraj - 211019</span>
+          <a href={`tel:+${callNumber}`}>📞 70070 62590</a>
+          <a href={`tel:+${alternateCallNumber}`}>📞 63867 43995</a>
+          <a href={mapsUrl} target="_blank" rel="noreferrer">Location CW9J+CF</a>
+        </div>
       </div>
-      <div>
-        <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp 94152 16320</a>
-        <a href={`tel:+${callNumber}`}>Call 70070 62590</a>
-        <a href={mapsUrl} target="_blank" rel="noreferrer">Location CW9J+CF</a>
-      </div>
+      <div className="footer-bottom">© 2026 S.K. Enterprises, Prayagraj. All Rights Reserved.</div>
     </footer>
   );
 }

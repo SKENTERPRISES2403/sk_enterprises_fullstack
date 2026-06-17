@@ -3,6 +3,8 @@ export const API_BASE = import.meta.env.VITE_API_URL || runtimeApiBase;
 export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
 export const whatsappNumber = "919415216320";
 export const callNumber = "917007062590";
+export const alternateCallNumber = "916386743995";
+export const gstin = "09AHBPD2893G3ZC";
 export const mapsUrl =
   "https://www.google.com/maps/place/S.K.+Enterprises/@25.4185751,81.9310271,94m/data=!3m1!1e3!4m6!3m5!1s0x39854b0f57259867:0xc30f389d3b657a9!8m2!3d25.4185216!4d81.9311958!16s%2Fg%2F11w3ckv82g?entry=ttu&g_ep=EgoyMDI2MDYxMy4wIKXMDSoASAFQAw%3D%3D";
 
@@ -120,6 +122,19 @@ export const demoProducts = [
     featured: true,
   },
   {
+    id: "demo-araldite",
+    name: "Araldite Epoxy Adhesive",
+    brand: "Araldite",
+    category: "Construction Chemicals",
+    price: 0,
+    mrp: 0,
+    stock: 40,
+    warranty: "As per brand",
+    description: "Strong epoxy adhesive for repair, bonding and project work.",
+    image_url: "/assets/brands/araldite-logo.png",
+    featured: false,
+  },
+  {
     id: "demo-pipes",
     name: "Supreme & Ashirvad Pipes",
     brand: "Supreme / Ashirvad",
@@ -131,6 +146,25 @@ export const demoProducts = [
     description: "Plumbing pipes and fittings for residential and project needs.",
     image_url: "/assets/shop.jpg",
     featured: false,
+  },
+];
+
+export const defaultCertificates = [
+  {
+    id: "cert-essel",
+    title: "ESSEL Authorized Dealership",
+    brand: "ESSEL Bath Fittings",
+    caption: "Certificate of authorised dealership for S.K. Enterprises, Prayagraj.",
+    image_url: "/assets/certificates/essel-certificate.jpeg",
+    position: 1,
+  },
+  {
+    id: "cert-roff",
+    title: "Roff Dealer Certificate",
+    brand: "Roff by Pidilite",
+    caption: "Dealer certificate for tile and stone fixing solutions.",
+    image_url: "/assets/certificates/roff-certificate.jpeg",
+    position: 2,
   },
 ];
 
@@ -213,6 +247,7 @@ export const api = {
   getProducts: () => request("/products"),
   getCategories: () => request("/categories"),
   getGallery: () => request("/gallery"),
+  getCertificates: () => request("/certificates"),
   productDetail: (id) => request(`/products/${id}`),
   register: (payload) => request("/auth/register", { method: "POST", body: payload }),
   login: (payload) => request("/auth/login", { method: "POST", body: payload }),
@@ -231,6 +266,9 @@ export const api = {
   createGalleryItem: (payload, token) => request("/admin/gallery", { method: "POST", token, body: payload }),
   updateGalleryItem: (id, payload, token) => request(`/admin/gallery/${id}`, { method: "PUT", token, body: payload }),
   deleteGalleryItem: (id, token) => request(`/admin/gallery/${id}`, { method: "DELETE", token }),
+  createCertificate: (payload, token) => request("/admin/certificates", { method: "POST", token, body: payload }),
+  updateCertificate: (id, payload, token) => request(`/admin/certificates/${id}`, { method: "PUT", token, body: payload }),
+  deleteCertificate: (id, token) => request(`/admin/certificates/${id}`, { method: "DELETE", token }),
   uploadImage: (file, token) => {
     const fd = new FormData();
     fd.append("file", file);

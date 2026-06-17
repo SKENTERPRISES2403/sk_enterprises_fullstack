@@ -136,6 +136,18 @@ PRODUCTS = [
         "image_url": "/uploads/roff.jpg",
         "featured": True,
     },
+    {
+        "name": "Araldite Epoxy Adhesive",
+        "brand": "Araldite",
+        "category": "Construction Chemicals",
+        "price": 0,
+        "mrp": 0,
+        "stock": 40,
+        "warranty": "As per brand",
+        "description": "Strong epoxy adhesive for repair, bonding and project work.",
+        "image_url": "/uploads/araldite-logo.png",
+        "featured": False,
+    },
 ]
 
 GALLERY = [
@@ -177,6 +189,23 @@ GALLERY = [
     },
 ]
 
+CERTIFICATES = [
+    {
+        "title": "ESSEL Authorized Dealership",
+        "brand": "ESSEL Bath Fittings",
+        "caption": "Certificate of authorised dealership for S.K. Enterprises, Prayagraj.",
+        "image_url": "/uploads/essel-certificate.jpeg",
+        "position": 1,
+    },
+    {
+        "title": "Roff Dealer Certificate",
+        "brand": "Roff by Pidilite",
+        "caption": "Dealer certificate for tile and stone fixing solutions.",
+        "image_url": "/uploads/roff-certificate.jpeg",
+        "position": 2,
+    },
+]
+
 
 async def seed_database(db) -> None:
     settings = get_settings()
@@ -198,6 +227,13 @@ async def seed_database(db) -> None:
 
     for item in GALLERY:
         await db.gallery.update_one(
+            {"title": item["title"]},
+            {"$setOnInsert": {**item, "active": True, "created_at": now, "updated_at": now}},
+            upsert=True,
+        )
+
+    for item in CERTIFICATES:
+        await db.certificates.update_one(
             {"title": item["title"]},
             {"$setOnInsert": {**item, "active": True, "created_at": now, "updated_at": now}},
             upsert=True,
