@@ -3,10 +3,19 @@ from pathlib import Path
 from pydantic import BaseModel
 import os
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
+
 
 class Settings(BaseModel):
     mongodb_url: str = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     database_name: str = os.getenv("DATABASE_NAME", "sk_enterprises")
+    allow_local_db_fallback: bool = os.getenv("ALLOW_LOCAL_DB_FALLBACK", "").lower() in {"1", "true", "yes"}
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
     jwt_expires_minutes: int = int(os.getenv("JWT_EXPIRES_MINUTES", "10080"))
     frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
@@ -26,6 +35,9 @@ class Settings(BaseModel):
         base = [self.frontend_origin, "http://127.0.0.1:5173", "http://localhost:5173"]
         extra = [origin.strip() for origin in self.frontend_origins.split(",") if origin.strip()]
         return list(dict.fromkeys([origin for origin in [*base, *extra] if origin]))
+
+    def can_use_local_db_fallback(self) -> bool:
+        return self.allow_local_db_fallback or "localhost" in self.mongodb_url or "127.0.0.1" in self.mongodb_url
 
 
 @lru_cache

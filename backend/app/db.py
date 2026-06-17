@@ -19,6 +19,8 @@ async def connect_to_mongo() -> None:
         database = client[settings.database_name]
         await database.command("ping")
     except PyMongoError:
+        if not settings.can_use_local_db_fallback():
+            raise
         if client:
             client.close()
         client = None

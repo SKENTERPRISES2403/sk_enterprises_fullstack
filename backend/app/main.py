@@ -32,7 +32,7 @@ app = FastAPI(title="S.K. Enterprises Ecommerce API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins(),
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?",
+    allow_origin_regex=r"(http://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?|https://[a-z0-9-]+\.vercel\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,6 +80,11 @@ async def get_product_or_404(product_id: str) -> dict[str, Any]:
 @app.get("/api/health")
 async def health() -> dict[str, Any]:
     return {"ok": True, "brand": "S.K. Enterprises", "time": now_iso()}
+
+
+@app.get("/")
+async def root() -> dict[str, Any]:
+    return {"ok": True, "service": "S.K. Enterprises Ecommerce API"}
 
 
 @app.post("/api/auth/register")
