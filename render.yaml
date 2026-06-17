@@ -11,6 +11,8 @@ services:
         value: sk_enterprises
       - key: ALLOW_LOCAL_DB_FALLBACK
         value: false
+      - key: PYTHON_VERSION
+        value: 3.12.8
       - key: JWT_EXPIRES_MINUTES
         value: 10080
       - key: SEED_OWNER_NAME
