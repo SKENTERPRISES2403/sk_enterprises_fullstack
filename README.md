@@ -32,10 +32,10 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-MongoDB must be running at `mongodb://localhost:27017`.
+MongoDB should be running at `mongodb://localhost:27017`. For local testing only, the backend falls back to `backend/app/data/localdb.json` if MongoDB is unavailable. Use MongoDB Atlas or a real MongoDB server for production.
 
 ## Frontend Setup
 
@@ -46,6 +46,14 @@ npm run dev
 ```
 
 Open `http://127.0.0.1:5173`.
+
+For mobile testing on the same Wi-Fi, open the laptop IP shown by Vite, for example:
+
+```text
+http://192.168.1.6:5173
+```
+
+The frontend automatically calls the backend on the same host at port `8000` unless `VITE_API_URL` is set.
 
 ## MongoDB With Docker
 
@@ -68,4 +76,3 @@ docker compose up -d mongo
 
 - WhatsApp orders: `9415216320`
 - Call button: `7007062590`
-
