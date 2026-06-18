@@ -59,6 +59,20 @@ export const demoProducts = [
     featured: true,
   },
   {
+    id: "demo-flowkem-ptmt",
+    name: "FlowKem PTMT Taps",
+    brand: "FlowKem",
+    category: "CP Fittings",
+    price: 0,
+    mrp: 0,
+    stock: 30,
+    warranty: "Brand warranty",
+    description: "FlowKem PTMT taps, fittings, pipes and tanks for home and project use.",
+    image_url: "/assets/brands/flowkem-logo.png",
+    image_urls: ["/assets/brands/flowkem-logo.png"],
+    featured: false,
+  },
+  {
     id: "demo-toilet",
     name: "Birla Pivot Western Toilet",
     brand: "Birla Pivot",
@@ -230,6 +244,14 @@ export const defaultBrands = [
     description: "Epoxy adhesive for repairs, bonding and project work.",
     warranty: "As per brand",
     position: 9,
+  },
+  {
+    id: "brand-flowkem",
+    name: "FlowKem",
+    logo_url: "/assets/brands/flowkem-logo.png",
+    description: "PTMT taps, pipes, fittings and tanks for homes and projects.",
+    warranty: "Brand warranty on selected products",
+    position: 10,
   },
 ];
 
