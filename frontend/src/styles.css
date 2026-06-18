@@ -513,6 +513,14 @@ img {
   line-height: 1;
 }
 
+.stats-row b .counter-number {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-transform: none;
+}
+
 .stats-row span,
 .stats-grid span {
   color: var(--muted);

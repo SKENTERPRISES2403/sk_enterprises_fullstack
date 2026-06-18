@@ -57,6 +57,8 @@ const emptyBrandItem = {
   active: true,
 };
 
+let statsCountersPlayed = false;
+
 const featureCardsByLang = {
   en: [
     ["📜", "Genuine Products", "100% original company supplied products."],
@@ -150,7 +152,6 @@ const copy = {
     trust2: "Authorized Dealer",
     trust3: "Site Delivery Available",
     trust4: "Bulk Orders Accepted",
-    trust5: "FlowKem Distributor",
     stat1: "Years Experience",
     stat2: "Happy Customers",
     stat3: "Contractor Network",
@@ -218,7 +219,6 @@ const copy = {
     trust2: "अधिकृत डीलर",
     trust3: "साइट डिलीवरी उपलब्ध",
     trust4: "बल्क ऑर्डर स्वीकार",
-    trust5: "FlowKem Distributor",
     stat1: "साल का अनुभव",
     stat2: "खुश ग्राहक",
     stat3: "कॉन्ट्रैक्टर नेटवर्क",
@@ -286,7 +286,6 @@ const copy = {
     trust2: "अधिकृत डीलर",
     trust3: "साइट डिलीवरी बा",
     trust4: "थोक ऑर्डर लेवल जाला",
-    trust5: "FlowKem Distributor",
     stat1: "साल के अनुभव",
     stat2: "खुश ग्राहक",
     stat3: "ठेकेदार नेटवर्क",
@@ -777,7 +776,7 @@ export function StorePage({
 function TrustBar({ t }) {
   return (
     <section className="trust-bar">
-      {[t("trust1"), t("trust2"), t("trust3"), t("trust4"), t("trust5")].map((item) => (
+      {[t("trust1"), t("trust2"), t("trust3"), t("trust4")].map((item) => (
         <span key={item}>{item}</span>
       ))}
     </section>
@@ -846,19 +845,27 @@ function StatsBar({ t }) {
 
 function AnimatedCounter({ target, suffix = "" }) {
   const counterRef = useRef(null);
-  const [value, setValue] = useState(0);
-  const [started, setStarted] = useState(false);
+  const alreadyPlayedRef = useRef(statsCountersPlayed);
+  const [value, setValue] = useState(alreadyPlayedRef.current ? target : 0);
+  const [started, setStarted] = useState(alreadyPlayedRef.current);
 
   useEffect(() => {
+    if (statsCountersPlayed) {
+      setValue(target);
+      setStarted(true);
+      return undefined;
+    }
     const node = counterRef.current;
     if (!node) return undefined;
     if (!("IntersectionObserver" in window)) {
+      statsCountersPlayed = true;
       setStarted(true);
       return undefined;
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          statsCountersPlayed = true;
           setStarted(true);
           observer.disconnect();
         }
@@ -870,6 +877,10 @@ function AnimatedCounter({ target, suffix = "" }) {
   }, []);
 
   useEffect(() => {
+    if (statsCountersPlayed && alreadyPlayedRef.current) {
+      setValue(target);
+      return undefined;
+    }
     if (!started) {
       setValue(0);
       return undefined;
@@ -885,7 +896,7 @@ function AnimatedCounter({ target, suffix = "" }) {
     }, 24);
     return () => window.clearInterval(timer);
   }, [started, target]);
-  return <span ref={counterRef}>{value}{suffix}</span>;
+  return <span className="counter-number" ref={counterRef}>{value}{suffix}</span>;
 }
 
 function SectionHead({ kicker, title, sub }) {
@@ -1810,7 +1821,7 @@ function Footer({ setPage }) {
       <div className="footer-main">
         <div className="footer-brand">
           <b>S.K. ENTERPRISES</b>
-          <p>Prayagraj's trusted hardware and sanitary store. Authorized dealers of ESSEL, Birla Pivot, Roff, Supreme.</p>
+          <p>Prayagraj's trusted hardware and sanitary store. Authorized dealers of ESSEL, Birla Pivot, Roff, Supreme. FlowKem distributor.</p>
           <small>GSTIN: {gstin}</small>
         </div>
         <div className="footer-col">
