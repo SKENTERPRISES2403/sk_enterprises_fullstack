@@ -1,0 +1,46 @@
+{
+  "name": "S.K. Enterprises Prayagraj",
+  "short_name": "S.K. Enterprises",
+  "description": "Hardware, sanitaryware, pipes, tanks, tiles and construction chemicals catalog with cart and admin panel.",
+  "start_url": "/#store",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a2540",
+  "theme_color": "#0a2540",
+  "categories": ["shopping", "business"],
+  "icons": [
+    {
+      "src": "/assets/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Products",
+      "short_name": "Products",
+      "url": "/#store",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Cart",
+      "short_name": "Cart",
+      "url": "/#cart",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Admin",
+      "short_name": "Admin",
+      "url": "/#admin",
+      "icons": [{ "src": "/assets/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
