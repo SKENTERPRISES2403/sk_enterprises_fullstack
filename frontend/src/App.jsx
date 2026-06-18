@@ -139,6 +139,7 @@ const copy = {
     orders: "Orders",
     admin: "Admin",
     login: "Login",
+    register: "Register",
     cart: "Cart",
     heroKicker: "GST registered authorized dealer in Prayagraj",
     heroTitle: "S.K. Enterprises",
@@ -205,6 +206,7 @@ const copy = {
     orders: "ऑर्डर",
     admin: "एडमिन",
     login: "लॉगिन",
+    register: "रजिस्टर",
     cart: "कार्ट",
     heroKicker: "प्रयागराज में GST रजिस्टर्ड अधिकृत डीलर",
     heroTitle: "S.K. Enterprises",
@@ -271,6 +273,7 @@ const copy = {
     orders: "ऑर्डर",
     admin: "एडमिन",
     login: "लॉगिन",
+    register: "रजिस्टर",
     cart: "कार्ट",
     heroKicker: "प्रयागराज में GST रजिस्टर्ड अधिकृत डीलर",
     heroTitle: "S.K. Enterprises",
@@ -427,11 +430,15 @@ function App() {
   }
 
   async function handleAuth(mode, form) {
-    const payload = Object.fromEntries(new FormData(form));
-    const result = mode === "register" ? await api.register(payload) : await api.login(payload);
-    setAuth(result);
-    setNotice(`Logged in as ${result.user.name}`);
-    setPage(result.user.role === "customer" ? "store" : "admin");
+    try {
+      const payload = Object.fromEntries(new FormData(form));
+      const result = mode === "register" ? await api.register(payload) : await api.login(payload);
+      setAuth(result);
+      setNotice(`Logged in as ${result.user.name}`);
+      setPage(result.user.role === "customer" ? "store" : "admin");
+    } catch (error) {
+      setNotice(error.message || "Login/Register failed. Please check phone and password.");
+    }
   }
 
   function logout() {
@@ -521,8 +528,14 @@ function App() {
         <CheckoutPage auth={auth} cart={cart} placeOrder={placeOrder} setPage={setPage} />
       )}
 
-      {page === "login" && (
-        <LoginPage auth={auth} logout={logout} onAuth={handleAuth} setPage={setPage} />
+      {(page === "login" || page === "register") && (
+        <LoginPage
+          auth={auth}
+          logout={logout}
+          onAuth={handleAuth}
+          setPage={setPage}
+          initialMode={page === "register" ? "register" : "login"}
+        />
       )}
 
       {page === "orders" && (
@@ -572,7 +585,10 @@ function Header({ auth, cartQty, setPage, lang, setLang, t }) {
         {auth ? (
           <button className="soft-button account-button" onClick={() => setPage("login")}>{auth.user.name}</button>
         ) : (
-          <button className="soft-button account-button" onClick={() => setPage("login")}>{t("login")}</button>
+          <div className="auth-buttons">
+            <button className="soft-button account-button" onClick={() => setPage("login")}>{t("login")}</button>
+            <button className="soft-button register-button" onClick={() => setPage("register")}>{t("register")}</button>
+          </div>
         )}
         <button className="cart-button" onClick={() => setPage("cart")}>{t("cart")} <b>{cartQty}</b></button>
       </div>
@@ -1053,9 +1069,13 @@ export function CheckoutPage({ auth, cart, placeOrder, setPage }) {
   );
 }
 
-export function LoginPage({ auth, logout, onAuth, setPage }) {
-  const [mode, setMode] = useState("login");
+export function LoginPage({ auth, logout, onAuth, setPage, initialMode = "login" }) {
+  const [mode, setMode] = useState(initialMode);
   const adminRole = ["owner", "admin", "staff"].includes(auth?.user?.role);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   if (auth) {
     return (
@@ -1087,18 +1107,19 @@ export function LoginPage({ auth, logout, onAuth, setPage }) {
         <span className="pill">{mode === "login" ? "Login" : "Register"}</span>
         <h1>{mode === "login" ? "Customer / Staff Login" : "Create Customer Account"}</h1>
       </div>
-      <form className="panel-form" onSubmit={(event) => { event.preventDefault(); onAuth(mode, event.currentTarget); }}>
+      <div className="auth-mode-tabs">
+        <button className={mode === "login" ? "active" : ""} onClick={() => setPage("login")}>Login</button>
+        <button className={mode === "register" ? "active" : ""} onClick={() => setPage("register")}>Register</button>
+      </div>
+      <form className="panel-form auth-form" onSubmit={(event) => { event.preventDefault(); onAuth(mode, event.currentTarget); }}>
         {mode === "register" && <input name="name" placeholder="Full name" required />}
         <input name="phone" placeholder="Phone number" required />
         <input name="password" type="password" placeholder="Password" required />
         <button className="primary">{mode === "login" ? "Login" : "Register"}</button>
       </form>
-      <button className="text-button" onClick={() => setMode(mode === "login" ? "register" : "login")}>
+      <button className="text-button auth-switch" onClick={() => setPage(mode === "login" ? "register" : "login")}>
         {mode === "login" ? "New customer? Register" : "Already registered? Login"}
       </button>
-      <div className="hint-box">
-        Owner seed login: phone 7007062590. Change the seeded password after setup.
-      </div>
     </main>
   );
 }

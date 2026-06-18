@@ -1,4 +1,7 @@
-const runtimeApiBase = `${window.location.protocol}//${window.location.hostname}:8000/api`;
+const localHostnames = ["localhost", "127.0.0.1", "0.0.0.0"];
+const runtimeApiBase = localHostnames.includes(window.location.hostname)
+  ? `${window.location.protocol}//${window.location.hostname}:8000/api`
+  : "https://sk-enterprises-api.onrender.com/api";
 export const API_BASE = import.meta.env.VITE_API_URL || runtimeApiBase;
 export const API_ORIGIN = API_BASE.replace(/\/api\/?$/, "");
 export const whatsappNumber = "919415216320";
