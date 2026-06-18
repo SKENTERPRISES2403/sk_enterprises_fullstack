@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./styles.css";
 import {
   api,
@@ -150,6 +150,7 @@ const copy = {
     trust2: "Authorized Dealer",
     trust3: "Site Delivery Available",
     trust4: "Bulk Orders Accepted",
+    trust5: "FlowKem Distributor",
     stat1: "Years Experience",
     stat2: "Happy Customers",
     stat3: "Contractor Network",
@@ -217,6 +218,7 @@ const copy = {
     trust2: "अधिकृत डीलर",
     trust3: "साइट डिलीवरी उपलब्ध",
     trust4: "बल्क ऑर्डर स्वीकार",
+    trust5: "FlowKem Distributor",
     stat1: "साल का अनुभव",
     stat2: "खुश ग्राहक",
     stat3: "कॉन्ट्रैक्टर नेटवर्क",
@@ -284,6 +286,7 @@ const copy = {
     trust2: "अधिकृत डीलर",
     trust3: "साइट डिलीवरी बा",
     trust4: "थोक ऑर्डर लेवल जाला",
+    trust5: "FlowKem Distributor",
     stat1: "साल के अनुभव",
     stat2: "खुश ग्राहक",
     stat3: "ठेकेदार नेटवर्क",
@@ -400,11 +403,29 @@ function App() {
   const cartQty = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   function addToCart(product, quantity = 1) {
+    const stock = Number(product.stock || 0);
+    let message = "Product added to cart";
+    if (stock <= 0) {
+      setNotice("This product is out of stock");
+      return;
+    }
+    const existingCartItem = cart.find((item) => item.product_id === product.id);
+    const currentQty = Number(existingCartItem?.quantity || 0);
+    const availableQty = Math.max(0, stock - currentQty);
+    if (availableQty <= 0) {
+      setNotice(`Only ${stock} in stock. You already added maximum quantity.`);
+      return;
+    }
+    const requestedQty = Math.max(1, Number(quantity || 1));
+    const nextAddQty = Math.min(requestedQty, availableQty);
+    if (nextAddQty < requestedQty) {
+      message = `Only ${stock} in stock. Quantity adjusted.`;
+    }
     setCart((oldCart) => {
       const existing = oldCart.find((item) => item.product_id === product.id);
       if (existing) {
         return oldCart.map((item) =>
-          item.product_id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.product_id === product.id ? { ...item, stock, quantity: item.quantity + nextAddQty } : item
         );
       }
       return [
@@ -414,17 +435,29 @@ function App() {
           name: product.name,
           price: Number(product.price || 0),
           image_url: product.image_url,
-          quantity,
+          stock,
+          quantity: nextAddQty,
         },
       ];
     });
-    setNotice("Product added to cart");
+    setNotice(message);
   }
 
   function updateQty(productId, quantity) {
+    const cartItem = cart.find((item) => item.product_id === productId);
+    const cartItemStock = Number(cartItem?.stock || 0);
+    const requestedQty = Math.max(0, quantity);
+    if (cartItemStock > 0 && requestedQty > cartItemStock) {
+      setNotice(`Only ${cartItemStock} in stock.`);
+    }
     setCart((oldCart) =>
       oldCart
-        .map((item) => (item.product_id === productId ? { ...item, quantity: Math.max(0, quantity) } : item))
+        .map((item) => {
+          if (item.product_id !== productId) return item;
+          const stock = Number(item.stock || 0);
+          const nextQty = stock > 0 ? Math.min(requestedQty, stock) : requestedQty;
+          return { ...item, quantity: nextQty };
+        })
         .filter((item) => item.quantity > 0)
     );
   }
@@ -744,7 +777,7 @@ export function StorePage({
 function TrustBar({ t }) {
   return (
     <section className="trust-bar">
-      {[t("trust1"), t("trust2"), t("trust3"), t("trust4")].map((item) => (
+      {[t("trust1"), t("trust2"), t("trust3"), t("trust4"), t("trust5")].map((item) => (
         <span key={item}>{item}</span>
       ))}
     </section>
@@ -812,8 +845,35 @@ function StatsBar({ t }) {
 }
 
 function AnimatedCounter({ target, suffix = "" }) {
+  const counterRef = useRef(null);
   const [value, setValue] = useState(0);
+  const [started, setStarted] = useState(false);
+
   useEffect(() => {
+    const node = counterRef.current;
+    if (!node) return undefined;
+    if (!("IntersectionObserver" in window)) {
+      setStarted(true);
+      return undefined;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.45 }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) {
+      setValue(0);
+      return undefined;
+    }
     let frame = 0;
     const totalFrames = 110;
     const timer = window.setInterval(() => {
@@ -824,8 +884,8 @@ function AnimatedCounter({ target, suffix = "" }) {
       if (progress >= 1) window.clearInterval(timer);
     }, 24);
     return () => window.clearInterval(timer);
-  }, [target]);
-  return <>{value}{suffix}</>;
+  }, [started, target]);
+  return <span ref={counterRef}>{value}{suffix}</span>;
 }
 
 function SectionHead({ kicker, title, sub }) {
@@ -910,6 +970,7 @@ function PriceBlock({ product, t, large = false }) {
 }
 
 function ProductCard({ product, addToCart, openDetail, t }) {
+  const inStock = Number(product.stock || 0) > 0;
   return (
     <article className="product-card">
       <button className="image-button" onClick={() => openDetail(product)}>
@@ -924,7 +985,7 @@ function ProductCard({ product, addToCart, openDetail, t }) {
       </div>
       <div className="card-actions">
         <button onClick={() => openDetail(product)}>{t("details")}</button>
-        <button className="primary" onClick={() => addToCart(product)}>{t("add")}</button>
+        <button className="primary" disabled={!inStock} onClick={() => addToCart(product)}>{inStock ? t("add") : "Out"}</button>
       </div>
     </article>
   );
@@ -1040,7 +1101,9 @@ function ContactSection({ t, submitLead }) {
 }
 
 export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[key] || key }) {
-  const [qty, setQty] = useState(1);
+  const stock = Number(product.stock || 0);
+  const maxQty = Math.max(1, stock);
+  const [qty, setQty] = useState(stock > 0 ? 1 : 0);
   const photos = Array.from(new Set([product.image_url, ...(product.image_urls || [])].filter(Boolean)));
   const [activePhoto, setActivePhoto] = useState(photos[0] || product.image_url);
   return (
@@ -1071,10 +1134,10 @@ export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[k
           <div><dt>Warranty</dt><dd>{product.warranty || "-"}</dd></div>
         </dl>
         <div className="qty-box">
-          <button onClick={() => setQty(Math.max(1, qty - 1))}>-</button>
+          <button disabled={stock <= 0} onClick={() => setQty(Math.max(1, qty - 1))}>-</button>
           <b>{qty}</b>
-          <button onClick={() => setQty(qty + 1)}>+</button>
-          <button className="primary" onClick={() => addToCart(product, qty)}>{t("addCart")}</button>
+          <button disabled={stock <= 0 || qty >= maxQty} onClick={() => setQty(Math.min(maxQty, qty + 1))}>+</button>
+          <button className="primary" disabled={stock <= 0} onClick={() => addToCart(product, qty)}>{stock > 0 ? t("addCart") : "Out of Stock"}</button>
         </div>
       </div>
     </main>
@@ -1090,20 +1153,24 @@ export function CartPage({ cart, updateQty, setPage, t = (key) => copy.en[key] |
         <h1>Your Cart</h1>
       </div>
       {!cart.length && <Empty message={t("emptyCart")} />}
-      {cart.map((item) => (
-        <div className="cart-line" key={item.product_id}>
-          <img src={imageUrl(item.image_url)} alt={item.name} />
-          <div>
-            <h3>{item.name}</h3>
-            <p>{item.price ? formatRupees(item.price) : "Quote item"}</p>
+      {cart.map((item) => {
+        const stock = Number(item.stock || 0);
+        return (
+          <div className="cart-line" key={item.product_id}>
+            <img src={imageUrl(item.image_url)} alt={item.name} />
+            <div>
+              <h3>{item.name}</h3>
+              <p>{item.price ? formatRupees(item.price) : "Quote item"}</p>
+              {stock > 0 && <small>Stock limit: {stock}</small>}
+            </div>
+            <div className="qty-box">
+              <button onClick={() => updateQty(item.product_id, item.quantity - 1)}>-</button>
+              <b>{item.quantity}</b>
+              <button disabled={stock > 0 && item.quantity >= stock} onClick={() => updateQty(item.product_id, item.quantity + 1)}>+</button>
+            </div>
           </div>
-          <div className="qty-box">
-            <button onClick={() => updateQty(item.product_id, item.quantity - 1)}>-</button>
-            <b>{item.quantity}</b>
-            <button onClick={() => updateQty(item.product_id, item.quantity + 1)}>+</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="checkout-bar">
         <strong>{total ? `Approx total: Rs ${total}` : "Final rate will be confirmed offline"}</strong>
         <button className="primary" disabled={!cart.length} onClick={() => setPage("checkout")}>{t("checkout")}</button>
