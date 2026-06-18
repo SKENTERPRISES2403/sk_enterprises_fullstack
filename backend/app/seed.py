@@ -150,6 +150,72 @@ PRODUCTS = [
     },
 ]
 
+BRANDS = [
+    {
+        "name": "ESSEL",
+        "logo_url": "/uploads/essel-logo.png",
+        "description": "CP fittings, taps, showers, urinals, basins and bathroom accessories.",
+        "warranty": "Up to 10 years warranty on selected fittings",
+        "position": 1,
+    },
+    {
+        "name": "Birla Pivot",
+        "logo_url": "/uploads/birla-pivot-logo.jpg",
+        "description": "Sanitaryware and modern bath solutions for homes and projects.",
+        "warranty": "Brand warranty on selected sanitaryware",
+        "position": 2,
+    },
+    {
+        "name": "Roff by Pidilite",
+        "logo_url": "/uploads/roff-logo.png",
+        "description": "Tile adhesive, grout and tile-stone fixing chemicals.",
+        "warranty": "Company supplied project material",
+        "position": 3,
+    },
+    {
+        "name": "Supreme",
+        "logo_url": "/uploads/supreme-logo.png",
+        "description": "Pipes, fittings and water management products.",
+        "warranty": "Brand warranty on selected products",
+        "position": 4,
+    },
+    {
+        "name": "Ashirvad",
+        "logo_url": "/uploads/ashirvad-logo.png",
+        "description": "CPVC, UPVC and plumbing pipe systems.",
+        "warranty": "Brand warranty on selected pipes",
+        "position": 5,
+    },
+    {
+        "name": "CERA",
+        "logo_url": "/uploads/cera-logo.png",
+        "description": "Premium sanitaryware and bathroom solutions.",
+        "warranty": "Brand warranty on selected sanitaryware",
+        "position": 6,
+    },
+    {
+        "name": "Hindware",
+        "logo_url": "/uploads/hindware-logo.png",
+        "description": "Sanitaryware, basins, toilets and bath products.",
+        "warranty": "Brand warranty on selected products",
+        "position": 7,
+    },
+    {
+        "name": "Sintex",
+        "logo_url": "/uploads/sintex-logo.png",
+        "description": "Water tanks and storage solutions.",
+        "warranty": "Brand warranty on selected tanks",
+        "position": 8,
+    },
+    {
+        "name": "Araldite",
+        "logo_url": "/uploads/araldite-logo.png",
+        "description": "Epoxy adhesive for repairs, bonding and project work.",
+        "warranty": "As per brand",
+        "position": 9,
+    },
+]
+
 GALLERY = [
     {
         "title": "Showroom Exterior",
@@ -222,6 +288,13 @@ async def seed_database(db) -> None:
         await db.products.update_one(
             {"name": product["name"]},
             {"$setOnInsert": {**product, "active": True, "created_at": now, "updated_at": now}},
+            upsert=True,
+        )
+
+    for brand in BRANDS:
+        await db.brands.update_one(
+            {"name": brand["name"]},
+            {"$setOnInsert": {**brand, "active": True, "created_at": now, "updated_at": now}},
             upsert=True,
         )
 

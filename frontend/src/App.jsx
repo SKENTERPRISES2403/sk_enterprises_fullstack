@@ -3,6 +3,7 @@ import "./styles.css";
 import {
   api,
   imageUrl,
+  defaultBrands,
   demoProducts,
   defaultCertificates,
   defaultGallery,
@@ -47,17 +48,14 @@ const emptyCertificateItem = {
   active: true,
 };
 
-const brandTiles = [
-  { name: "ESSEL BATH FITTINGS", line: "Authorized CP fittings", logo: "/assets/brands/essel-logo.png" },
-  { name: "BIRLA PIVOT", line: "Sanitaryware partner", logo: "/assets/brands/birla-pivot-logo.jpg" },
-  { name: "ROFF by PIDILITE", line: "Tile and stone fixing", logo: "/assets/brands/roff-logo.png" },
-  { name: "SUPREME PIPES", line: "Plumbing systems", logo: "/assets/brands/supreme-logo.png" },
-  { name: "ASHIRVAD PIPES", line: "CPVC and UPVC", logo: "/assets/brands/ashirvad-logo.png" },
-  { name: "CERA", line: "Bath solutions", logo: "/assets/brands/cera-logo.png" },
-  { name: "HINDWARE", line: "Sanitaryware", logo: "/assets/brands/hindware-logo.png" },
-  { name: "SINTEX", line: "Water tanks", logo: "/assets/brands/sintex-logo.png" },
-  { name: "ARALDITE", line: "Epoxy adhesive", logo: "/assets/brands/araldite-logo.png" },
-];
+const emptyBrandItem = {
+  name: "",
+  logo_url: "",
+  description: "",
+  warranty: "",
+  position: 0,
+  active: true,
+};
 
 const reviews = [
   {
@@ -279,10 +277,12 @@ function App() {
   const [page, setPage] = useHashPage();
   const [lang, setLang] = useLocalStorage("sk_lang", "en");
   const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState(defaultBrands);
   const [gallery, setGallery] = useState(defaultGallery);
   const [certificates, setCertificates] = useState(defaultCertificates);
   const [categories, setCategories] = useState(defaultCategories);
   const [query, setQuery] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
   const [cart, setCart] = useLocalStorage("sk_fullstack_cart", []);
@@ -301,19 +301,22 @@ function App() {
 
   async function loadCatalog() {
     try {
-      const [productRows, categoryRows, galleryRows, certificateRows] = await Promise.all([
+      const [productRows, categoryRows, brandRows, galleryRows, certificateRows] = await Promise.all([
         api.getProducts(),
         api.getCategories(),
+        api.getBrands(),
         api.getGallery(),
         api.getCertificates(),
       ]);
       setProducts(productRows.length ? productRows : demoProducts);
       setCategories(categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories);
+      setBrands(brandRows.length ? brandRows : defaultBrands);
       setGallery(galleryRows.length ? galleryRows : defaultGallery);
       setCertificates(certificateRows.length ? certificateRows : defaultCertificates);
     } catch {
       setProducts(demoProducts);
       setCategories(defaultCategories);
+      setBrands(defaultBrands);
       setGallery(defaultGallery);
       setCertificates(defaultCertificates);
       setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
@@ -321,12 +324,17 @@ function App() {
   }
 
   const visibleProducts = useMemo(() => {
+    const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return products.filter((product) => {
       const matchesCategory = category === "All" || product.category === category;
-      const search = `${product.name} ${product.brand} ${product.category} ${product.description}`.toLowerCase();
-      return matchesCategory && (!query || search.includes(query.toLowerCase()));
+      const searchable = `${product.name} ${product.brand} ${product.category} ${product.warranty} ${product.description}`.toLowerCase();
+      const matchesSearch = !terms.length || terms.every((term) => searchable.includes(term));
+      const brandName = selectedBrand.toLowerCase();
+      const brandKey = brandName.split(" ")[0];
+      const matchesBrand = !selectedBrand || searchable.includes(brandName) || searchable.includes(brandKey);
+      return matchesCategory && matchesSearch && matchesBrand;
     });
-  }, [products, category, query]);
+  }, [products, category, query, selectedBrand]);
 
   const featured = products.filter((product) => product.featured).slice(0, 4);
   const cartQty = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -425,11 +433,14 @@ function App() {
           lang={lang}
           featured={featured}
           products={visibleProducts}
+          brands={brands}
           gallery={gallery}
           certificates={certificates}
           categories={categories}
           query={query}
           setQuery={setQuery}
+          selectedBrand={selectedBrand}
+          setSelectedBrand={setSelectedBrand}
           category={category}
           setCategory={setCategory}
           addToCart={addToCart}
@@ -481,7 +492,7 @@ function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
   return (
     <header className="site-header">
       <button className="brand-button" onClick={() => setPage("store")}>
-        <span className="brand-mark">SK</span>
+        <span className="brand-mark"><img src="/assets/sk-logo.png" alt="S.K. Enterprises logo" /></span>
         <span>S.K. <strong>Enterprises</strong></span>
       </button>
       <nav className="main-nav">
@@ -493,6 +504,7 @@ function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
         {adminRole && <button onClick={() => setPage("admin")}>{t("admin")}</button>}
       </nav>
       <div className="header-actions">
+        <LanguageSelect lang={lang} setLang={setLang} />
         <div className="lang-switch" aria-label="Language">
           {["en", "hi", "bho"].map((item) => (
             <button key={item} className={lang === item ? "active" : ""} onClick={() => setLang(item)}>
@@ -511,15 +523,30 @@ function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
   );
 }
 
+function LanguageSelect({ lang, setLang }) {
+  return (
+    <label className="lang-select-wrap" aria-label="Language">
+      <select value={lang} onChange={(event) => setLang(event.target.value)}>
+        <option value="en">EN English</option>
+        <option value="hi">हिंदी</option>
+        <option value="bho">भोजपुरी</option>
+      </select>
+    </label>
+  );
+}
+
 export function StorePage({
   t,
   featured,
   products,
+  brands,
   gallery,
   certificates,
   categories,
   query,
   setQuery,
+  selectedBrand,
+  setSelectedBrand,
   category,
   setCategory,
   addToCart,
@@ -546,18 +573,21 @@ export function StorePage({
       </section>
 
       <TrustBar t={t} />
-      <BrandMarquee />
+      <BrandMarquee brands={brands} />
       <StatsBar t={t} />
 
       <section className="section" id="products">
-        <SectionHead kicker="Catalog" title={t("catalog")} sub={t("featuredSub")} />
-        <div className="toolbar">
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("search")} />
+        <SectionHead title={t("catalog")} sub={t("featuredSub")} />
+        <form className="toolbar search-toolbar" onSubmit={(event) => { event.preventDefault(); setSelectedBrand(""); }}>
+          <div className="search-box">
+            <input value={query} onChange={(event) => { setQuery(event.target.value); setSelectedBrand(""); }} placeholder={t("search")} />
+            <button type="submit" aria-label="Search">🔍</button>
+          </div>
           <select value={category} onChange={(event) => setCategory(event.target.value)}>
             <option>All</option>
             {categories.map((item) => <option key={item}>{item}</option>)}
           </select>
-        </div>
+        </form>
         <div className="category-tabs">
           {["All", ...categories].map((item) => (
             <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>
@@ -565,17 +595,24 @@ export function StorePage({
             </button>
           ))}
         </div>
-        {!!featured.length && (
-          <>
-            <div className="subsection-label">{t("featured")}</div>
-            <div className="product-grid featured-grid">
-              {featured.map((product) => (
-                <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
-              ))}
-            </div>
-          </>
+        <ShopByBrand
+          brands={brands}
+          selectedBrand={selectedBrand}
+          onSelect={(brand) => {
+            setSelectedBrand(brand.name);
+            setQuery("");
+            setCategory("All");
+            window.setTimeout(() => document.getElementById("products-list")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+          }}
+        />
+        {(selectedBrand || query || category !== "All") && (
+          <div className="filter-strip">
+            <b>{selectedBrand ? `${selectedBrand} products` : "Search results"}</b>
+            <button onClick={() => { setSelectedBrand(""); setQuery(""); setCategory("All"); }}>Clear</button>
+          </div>
         )}
-        <div className="product-grid">
+        <div className="product-grid" id="products-list">
+          {!products.length && <Empty message="No products found. Try another brand or search." />}
           {products.map((product) => (
             <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
           ))}
@@ -601,19 +638,44 @@ function TrustBar({ t }) {
   );
 }
 
-function BrandMarquee() {
-  const items = [...brandTiles, ...brandTiles];
+function BrandMarquee({ brands }) {
+  const sorted = [...brands].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+  const items = [...sorted, ...sorted];
   return (
     <section className="brand-marquee" aria-label="Authorized brands">
       <div className="marquee-track">
         {items.map((brand, index) => (
           <div className="brand-tile" key={`${brand.name}-${index}`}>
-            <span><img src={brand.logo} alt={`${brand.name} logo`} /></span>
+            <span><img src={imageUrl(brand.logo_url)} alt={`${brand.name} logo`} /></span>
             <div>
               <b>{brand.name}</b>
-              <small>{brand.line}</small>
+              <small>{brand.warranty || brand.description}</small>
             </div>
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ShopByBrand({ brands, selectedBrand, onSelect }) {
+  const sorted = [...brands].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
+  return (
+    <section className="shop-by-brand" aria-label="Shop by brand">
+      <div className="subsection-label">Shop by Brand</div>
+      <div className="brand-grid">
+        {sorted.map((brand) => (
+          <button
+            className={`brand-card ${selectedBrand === brand.name ? "active" : ""}`}
+            data-brand-name={brand.name}
+            key={brand.id || brand.name}
+            onClick={() => onSelect(brand)}
+          >
+            <span><img src={imageUrl(brand.logo_url)} alt={`${brand.name} logo`} /></span>
+            <b>{brand.name}</b>
+            <small>{brand.warranty}</small>
+            <p>{brand.description}</p>
+          </button>
         ))}
       </div>
     </section>
@@ -640,14 +702,14 @@ function AnimatedCounter({ target, suffix = "" }) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     let frame = 0;
-    const totalFrames = 42;
+    const totalFrames = 70;
     const timer = window.setInterval(() => {
       frame += 1;
       const progress = Math.min(frame / totalFrames, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.round(target * eased));
       if (progress >= 1) window.clearInterval(timer);
-    }, 22);
+    }, 24);
     return () => window.clearInterval(timer);
   }, [target]);
   return <>{value}{suffix}</>;
@@ -656,7 +718,7 @@ function AnimatedCounter({ target, suffix = "" }) {
 function SectionHead({ kicker, title, sub }) {
   return (
     <div className="section-head">
-      <span className="pill">{kicker}</span>
+      {kicker && <span className="pill">{kicker}</span>}
       <h2>{title}</h2>
       {sub && <p>{sub}</p>}
     </div>
@@ -695,7 +757,7 @@ function WhyUs({ t }) {
   ];
   return (
     <section className="section why-us" id="why">
-      <SectionHead kicker="Trust" title={t("whyTitle")} />
+      <SectionHead title={t("whyTitle")} />
       <div className="quote-box">{t("whySub")}</div>
       <div className="features-grid">
         {items.map(([icon, title, text]) => (
@@ -714,7 +776,7 @@ function DealershipSection({ t, certificates }) {
   const sorted = [...certificates].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
   return (
     <section className="section dealership-section">
-      <SectionHead kicker="Authorized" title={t("dealership")} sub={t("dealershipSub")} />
+      <SectionHead title={t("dealership")} sub={t("dealershipSub")} />
       <div className="certs-grid">
         {sorted.map((item) => (
           <article className="cert-card" key={item.title}>
@@ -734,7 +796,7 @@ function ShowroomGallery({ gallery, t }) {
   const sorted = [...gallery].sort((a, b) => Number(a.position || 0) - Number(b.position || 0));
   return (
     <section className="section gallery-section" id="gallery">
-      <SectionHead kicker="Showroom" title={t("gallery")} sub={t("gallerySub")} />
+      <SectionHead title={t("gallery")} sub={t("gallerySub")} />
       <div className="gallery-grid">
         {sorted.map((item) => (
           <article className="gallery-card" key={item.id || item.image_url}>
@@ -753,7 +815,7 @@ function ShowroomGallery({ gallery, t }) {
 function ReviewsSection({ t }) {
   return (
     <section className="section reviews-section">
-      <SectionHead kicker="Reviews" title={t("reviews")} sub={t("reviewsSub")} />
+      <SectionHead title={t("reviews")} sub={t("reviewsSub")} />
       <div className="reviews-grid">
         {reviews.map((review) => (
           <article className="review-card" key={review.name}>
@@ -771,7 +833,6 @@ function ContactSection({ t, submitLead }) {
   return (
     <section className="section contact-section" id="contact">
       <div className="contact-copy">
-        <span className="pill">Contact</span>
         <h2>{t("contactTitle")}</h2>
         <p>{t("contactSub")}</p>
         <div className="quick-links">
@@ -802,10 +863,23 @@ function ContactSection({ t, submitLead }) {
 
 export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[key] || key }) {
   const [qty, setQty] = useState(1);
+  const photos = Array.from(new Set([product.image_url, ...(product.image_urls || [])].filter(Boolean)));
+  const [activePhoto, setActivePhoto] = useState(photos[0] || product.image_url);
   return (
     <main className="section detail-layout">
       <button className="text-button" onClick={back}>Back to products</button>
-      <img className="detail-image" src={imageUrl(product.image_url)} alt={product.name} />
+      <div className="detail-media">
+        <img className="detail-image" src={imageUrl(activePhoto || product.image_url)} alt={product.name} />
+        {photos.length > 1 && (
+          <div className="thumb-row">
+            {photos.map((photo) => (
+              <button className={activePhoto === photo ? "active" : ""} key={photo} onClick={() => setActivePhoto(photo)}>
+                <img src={imageUrl(photo)} alt={product.name} />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="detail-copy">
         <span className="pill">{product.category}</span>
         <h1>{product.name}</h1>
@@ -956,11 +1030,13 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   const [tab, setTab] = useState("dashboard");
   const [dashboard, setDashboard] = useState(null);
   const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [orders, setOrders] = useState([]);
   const [leads, setLeads] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [certificates, setCertificates] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [editingBrand, setEditingBrand] = useState(null);
   const [editingGallery, setEditingGallery] = useState(null);
   const [editingCertificate, setEditingCertificate] = useState(null);
   const [message, setMessage] = useState("");
@@ -974,9 +1050,10 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   }, [auth]);
 
   async function refreshAdmin() {
-    const [stats, productRows, orderRows, leadRows, galleryRows, certificateRows] = await Promise.all([
+    const [stats, productRows, brandRows, orderRows, leadRows, galleryRows, certificateRows] = await Promise.all([
       api.dashboard(auth.token),
       api.getProducts(),
+      api.getBrands(),
       api.adminOrders(auth.token),
       api.adminLeads(auth.token),
       api.getGallery(),
@@ -984,6 +1061,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     ]);
     setDashboard(stats);
     setProducts(productRows);
+    setBrands(brandRows);
     setOrders(orderRows);
     setLeads(leadRows);
     setGallery(galleryRows);
@@ -1004,9 +1082,19 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     const fd = new FormData(form);
     let imageUrlValue = fd.get("image_url") || "";
     const imageFile = fd.get("image_file");
+    const imageUrls = String(fd.get("image_urls") || "")
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
     if (imageFile && imageFile.size) {
       const upload = await api.uploadImage(imageFile, auth.token);
       imageUrlValue = upload.image_url;
+      imageUrls.unshift(upload.image_url);
+    }
+    const galleryFiles = fd.getAll("image_files").filter((file) => file && file.size);
+    for (const file of galleryFiles) {
+      const upload = await api.uploadImage(file, auth.token);
+      imageUrls.push(upload.image_url);
     }
     const payload = {
       name: fd.get("name"),
@@ -1017,7 +1105,8 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
       stock: Number(fd.get("stock") || 0),
       warranty: fd.get("warranty"),
       description: fd.get("description"),
-      image_url: imageUrlValue,
+      image_url: imageUrlValue || imageUrls[0] || "",
+      image_urls: Array.from(new Set(imageUrls)),
       featured: fd.get("featured") === "on",
       active: true,
     };
@@ -1026,6 +1115,30 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setEditing(null);
     form.reset();
     setMessage("Product saved");
+    refreshAdmin();
+  }
+
+  async function saveBrand(form) {
+    const fd = new FormData(form);
+    let logoUrlValue = fd.get("logo_url") || "";
+    const logoFile = fd.get("logo_file");
+    if (logoFile && logoFile.size) {
+      const upload = await api.uploadImage(logoFile, auth.token);
+      logoUrlValue = upload.image_url;
+    }
+    const payload = {
+      name: fd.get("name"),
+      logo_url: logoUrlValue,
+      description: fd.get("description"),
+      warranty: fd.get("warranty"),
+      position: Number(fd.get("position") || 0),
+      active: true,
+    };
+    if (editingBrand?.id) await api.updateBrand(editingBrand.id, payload, auth.token);
+    else await api.createBrand(payload, auth.token);
+    setEditingBrand(null);
+    form.reset();
+    setMessage("Brand saved");
     refreshAdmin();
   }
 
@@ -1082,6 +1195,12 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     refreshAdmin();
   }
 
+  async function deleteBrand(id) {
+    await api.deleteBrand(id, auth.token);
+    setMessage("Brand deleted");
+    refreshAdmin();
+  }
+
   async function deleteGalleryItem(id) {
     await api.deleteGalleryItem(id, auth.token);
     setMessage("Gallery photo deleted");
@@ -1113,6 +1232,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
 
   const menuItems = [
     "dashboard",
+    ...(canDelete ? ["brands"] : []),
     "products",
     ...(canDelete ? ["certificates", "gallery"] : []),
     "orders",
@@ -1132,9 +1252,20 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
       <section className="admin-content">
         {message && <div className="notice inline" onClick={() => setMessage("")}>{message}</div>}
         {tab === "dashboard" && <Dashboard stats={dashboard} />}
+        {tab === "brands" && (
+          <BrandsAdmin
+            brands={brands}
+            editing={editingBrand}
+            setEditing={setEditingBrand}
+            saveBrand={saveBrand}
+            deleteBrand={deleteBrand}
+            canDelete={canDelete}
+          />
+        )}
         {tab === "products" && (
           <ProductsAdmin
             products={products}
+            brands={brands}
             editing={editing}
             setEditing={setEditing}
             saveProduct={saveProduct}
@@ -1173,7 +1304,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
 }
 
 function Dashboard({ stats }) {
-  const items = stats || { products: 0, orders: 0, new_orders: 0, leads: 0, gallery: 0, customers: 0 };
+  const items = stats || { products: 0, brands: 0, orders: 0, new_orders: 0, leads: 0, gallery: 0, customers: 0 };
   return (
     <>
       <div className="section-head"><span className="pill">Dashboard</span><h1>Business Overview</h1></div>
@@ -1186,14 +1317,48 @@ function Dashboard({ stats }) {
   );
 }
 
-function ProductsAdmin({ products, editing, setEditing, saveProduct, deleteProduct, canDelete }) {
+function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canDelete }) {
+  const brand = editing || emptyBrandItem;
+  return (
+    <>
+      <div className="section-head"><h1>Add / Edit Brand</h1></div>
+      <form key={editing?.id || "new-brand"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveBrand(event.currentTarget); }}>
+        <input name="name" defaultValue={brand.name} placeholder="Brand name" required />
+        <input name="warranty" defaultValue={brand.warranty} placeholder="Warranty line" />
+        <textarea name="description" defaultValue={brand.description} placeholder="Brand description" />
+        <div className="two-col">
+          <input name="position" type="number" defaultValue={brand.position} placeholder="Sort order" />
+          <input name="logo_url" defaultValue={brand.logo_url} placeholder="Existing logo URL" />
+        </div>
+        <input name="logo_file" type="file" accept="image/*" capture="environment" />
+        <button className="primary">{editing ? "Update Brand" : "Save Brand"}</button>
+      </form>
+      <div className="table-list">
+        {brands.map((item) => (
+          <article className="admin-row" key={item.id}>
+            <img src={imageUrl(item.logo_url)} alt={item.name} />
+            <div><b>{item.name}</b><small>{item.warranty || item.description}</small></div>
+            <span>Order {item.position || 0}</span>
+            <button onClick={() => setEditing(item)}>Edit</button>
+            {canDelete && <button className="danger" onClick={() => deleteBrand(item.id)}>Delete</button>}
+          </article>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, deleteProduct, canDelete }) {
   const product = editing || emptyProduct;
   return (
     <>
-      <div className="section-head"><span className="pill">Products</span><h1>Add / Edit Product</h1></div>
+      <div className="section-head"><h1>Add / Edit Product</h1></div>
       <form key={editing?.id || "new-product"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
         <input name="name" defaultValue={product.name} placeholder="Product name" required />
-        <input name="brand" defaultValue={product.brand} placeholder="Brand" />
+        <input name="brand" list="brand-options" defaultValue={product.brand} placeholder="Brand" />
+        <datalist id="brand-options">
+          {brands.map((item) => <option key={item.id || item.name} value={item.name} />)}
+        </datalist>
         <select name="category" defaultValue={product.category}>
           {defaultCategories.map((item) => <option key={item}>{item}</option>)}
         </select>
@@ -1207,7 +1372,9 @@ function ProductsAdmin({ products, editing, setEditing, saveProduct, deleteProdu
         </div>
         <textarea name="description" defaultValue={product.description} placeholder="Description" />
         <input name="image_url" defaultValue={product.image_url} placeholder="Existing image URL" />
+        <textarea name="image_urls" defaultValue={(product.image_urls || []).join("\n")} placeholder="Extra image URLs, one per line" />
         <input name="image_file" type="file" accept="image/*" capture="environment" />
+        <input name="image_files" type="file" accept="image/*" capture="environment" multiple />
         <label className="check-row"><input name="featured" type="checkbox" defaultChecked={product.featured} /> Featured product</label>
         <button className="primary">{editing ? "Update Product" : "Save Product"}</button>
       </form>

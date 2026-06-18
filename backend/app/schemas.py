@@ -33,12 +33,22 @@ class ProductIn(BaseModel):
     warranty: str = ""
     description: str = ""
     image_url: str = ""
+    image_urls: list[str] = Field(default_factory=list)
     featured: bool = False
     active: bool = True
 
 
 class ProductOut(ProductIn):
     id: str
+
+
+class BrandIn(BaseModel):
+    name: str
+    logo_url: str = ""
+    description: str = ""
+    warranty: str = ""
+    position: int = 0
+    active: bool = True
 
 
 class AddressIn(BaseModel):

@@ -41,6 +41,7 @@ export const demoProducts = [
     warranty: "Company warranty",
     description: "Chrome finish taps, mixers and CP bathroom fittings.",
     image_url: "/assets/essel_taps2.jpg",
+    image_urls: ["/assets/essel_taps2.jpg"],
     featured: true,
   },
   {
@@ -54,6 +55,7 @@ export const demoProducts = [
     warranty: "As per brand",
     description: "Premium matte black fittings for modern bathrooms.",
     image_url: "/assets/black_taps.jpg",
+    image_urls: ["/assets/black_taps.jpg"],
     featured: true,
   },
   {
@@ -67,6 +69,7 @@ export const demoProducts = [
     warranty: "Brand warranty",
     description: "Modern western toilet and sanitaryware options.",
     image_url: "/assets/birla_toilet.jpg",
+    image_urls: ["/assets/birla_toilet.jpg"],
     featured: true,
   },
   {
@@ -80,6 +83,7 @@ export const demoProducts = [
     warranty: "",
     description: "Ceramic, vitrified and porcelain tile range.",
     image_url: "/assets/tiles.jpg",
+    image_urls: ["/assets/tiles.jpg"],
     featured: true,
   },
   {
@@ -93,6 +97,7 @@ export const demoProducts = [
     warranty: "Brand warranty",
     description: "Durable water storage tanks for home and project use.",
     image_url: "/assets/tanks.jpg",
+    image_urls: ["/assets/tanks.jpg"],
     featured: true,
   },
   {
@@ -106,6 +111,7 @@ export const demoProducts = [
     warranty: "As per brand",
     description: "Scratch-resistant kitchen sinks in multiple sizes.",
     image_url: "/assets/sink.jpg",
+    image_urls: ["/assets/sink.jpg"],
     featured: true,
   },
   {
@@ -119,6 +125,7 @@ export const demoProducts = [
     warranty: "",
     description: "Tile and stone fixing adhesives, grouts and chemicals.",
     image_url: "/assets/roff.jpg",
+    image_urls: ["/assets/roff.jpg"],
     featured: true,
   },
   {
@@ -132,6 +139,7 @@ export const demoProducts = [
     warranty: "As per brand",
     description: "Strong epoxy adhesive for repair, bonding and project work.",
     image_url: "/assets/brands/araldite-logo.png",
+    image_urls: ["/assets/brands/araldite-logo.png"],
     featured: false,
   },
   {
@@ -145,7 +153,83 @@ export const demoProducts = [
     warranty: "Brand warranty",
     description: "Plumbing pipes and fittings for residential and project needs.",
     image_url: "/assets/shop.jpg",
+    image_urls: ["/assets/shop.jpg"],
     featured: false,
+  },
+];
+
+export const defaultBrands = [
+  {
+    id: "brand-essel",
+    name: "ESSEL",
+    logo_url: "/assets/brands/essel-logo.png",
+    description: "CP fittings, taps, showers, urinals, basins and bathroom accessories.",
+    warranty: "Up to 10 years warranty on selected fittings",
+    position: 1,
+  },
+  {
+    id: "brand-birla",
+    name: "Birla Pivot",
+    logo_url: "/assets/brands/birla-pivot-logo.jpg",
+    description: "Sanitaryware and modern bath solutions for homes and projects.",
+    warranty: "Brand warranty on selected sanitaryware",
+    position: 2,
+  },
+  {
+    id: "brand-roff",
+    name: "Roff by Pidilite",
+    logo_url: "/assets/brands/roff-logo.png",
+    description: "Tile adhesive, grout and tile-stone fixing chemicals.",
+    warranty: "Company supplied project material",
+    position: 3,
+  },
+  {
+    id: "brand-supreme",
+    name: "Supreme",
+    logo_url: "/assets/brands/supreme-logo.png",
+    description: "Pipes, fittings and water management products.",
+    warranty: "Brand warranty on selected products",
+    position: 4,
+  },
+  {
+    id: "brand-ashirvad",
+    name: "Ashirvad",
+    logo_url: "/assets/brands/ashirvad-logo.png",
+    description: "CPVC, UPVC and plumbing pipe systems.",
+    warranty: "Brand warranty on selected pipes",
+    position: 5,
+  },
+  {
+    id: "brand-cera",
+    name: "CERA",
+    logo_url: "/assets/brands/cera-logo.png",
+    description: "Premium sanitaryware and bathroom solutions.",
+    warranty: "Brand warranty on selected sanitaryware",
+    position: 6,
+  },
+  {
+    id: "brand-hindware",
+    name: "Hindware",
+    logo_url: "/assets/brands/hindware-logo.png",
+    description: "Sanitaryware, basins, toilets and bath products.",
+    warranty: "Brand warranty on selected products",
+    position: 7,
+  },
+  {
+    id: "brand-sintex",
+    name: "Sintex",
+    logo_url: "/assets/brands/sintex-logo.png",
+    description: "Water tanks and storage solutions.",
+    warranty: "Brand warranty on selected tanks",
+    position: 8,
+  },
+  {
+    id: "brand-araldite",
+    name: "Araldite",
+    logo_url: "/assets/brands/araldite-logo.png",
+    description: "Epoxy adhesive for repairs, bonding and project work.",
+    warranty: "As per brand",
+    position: 9,
   },
 ];
 
@@ -246,6 +330,7 @@ async function request(path, options = {}) {
 export const api = {
   getProducts: () => request("/products"),
   getCategories: () => request("/categories"),
+  getBrands: () => request("/brands"),
   getGallery: () => request("/gallery"),
   getCertificates: () => request("/certificates"),
   productDetail: (id) => request(`/products/${id}`),
@@ -266,6 +351,9 @@ export const api = {
   createGalleryItem: (payload, token) => request("/admin/gallery", { method: "POST", token, body: payload }),
   updateGalleryItem: (id, payload, token) => request(`/admin/gallery/${id}`, { method: "PUT", token, body: payload }),
   deleteGalleryItem: (id, token) => request(`/admin/gallery/${id}`, { method: "DELETE", token }),
+  createBrand: (payload, token) => request("/admin/brands", { method: "POST", token, body: payload }),
+  updateBrand: (id, payload, token) => request(`/admin/brands/${id}`, { method: "PUT", token, body: payload }),
+  deleteBrand: (id, token) => request(`/admin/brands/${id}`, { method: "DELETE", token }),
   createCertificate: (payload, token) => request("/admin/certificates", { method: "POST", token, body: payload }),
   updateCertificate: (id, payload, token) => request(`/admin/certificates/${id}`, { method: "PUT", token, body: payload }),
   deleteCertificate: (id, token) => request(`/admin/certificates/${id}`, { method: "DELETE", token }),

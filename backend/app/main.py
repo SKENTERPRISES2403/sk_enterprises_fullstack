@@ -13,6 +13,7 @@ from .db import close_mongo, connect_to_mongo, get_db
 from .image_upload import upload_image
 from .schemas import (
     AddressIn,
+    BrandIn,
     CertificateIn,
     GalleryIn,
     LeadIn,
@@ -69,6 +70,7 @@ def doc_id(doc: dict[str, Any]) -> dict[str, Any]:
 
 
 def clean_product(product: dict[str, Any]) -> dict[str, Any]:
+    product.setdefault("image_urls", [])
     return doc_id(product)
 
 
@@ -149,6 +151,43 @@ async def create_staff(payload: StaffCreateIn, _: dict[str, Any] = Depends(requi
 async def categories() -> list[dict[str, Any]]:
     cursor = get_db().categories.find({"active": {"$ne": False}}).sort("name", 1)
     return [doc_id(doc) async for doc in cursor]
+
+
+@app.get("/api/brands")
+async def brands() -> list[dict[str, Any]]:
+    cursor = get_db().brands.find({"active": {"$ne": False}}).sort([("position", 1), ("name", 1)])
+    return [doc_id(doc) async for doc in cursor]
+
+
+@app.post("/api/admin/brands")
+async def create_brand(payload: BrandIn, _: dict[str, Any] = Depends(require_roles("owner", "admin"))) -> dict[str, Any]:
+    doc = payload.model_dump()
+    doc.update({"created_at": now_iso(), "updated_at": now_iso()})
+    result = await get_db().brands.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    return doc_id(doc)
+
+
+@app.put("/api/admin/brands/{brand_id}")
+async def update_brand(brand_id: str, payload: BrandIn, _: dict[str, Any] = Depends(require_roles("owner", "admin"))) -> dict[str, Any]:
+    updates = payload.model_dump()
+    updates["updated_at"] = now_iso()
+    result = await get_db().brands.find_one_and_update(
+        {"_id": oid(brand_id)},
+        {"$set": updates},
+        return_document=True,
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    return doc_id(result)
+
+
+@app.delete("/api/admin/brands/{brand_id}")
+async def delete_brand(brand_id: str, _: dict[str, Any] = Depends(require_roles("owner", "admin"))) -> dict[str, bool]:
+    result = await get_db().brands.update_one({"_id": oid(brand_id)}, {"$set": {"active": False, "updated_at": now_iso()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Brand not found")
+    return {"ok": True}
 
 
 @app.get("/api/gallery")
@@ -240,6 +279,8 @@ async def products(
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
             {"brand": {"$regex": search, "$options": "i"}},
+            {"category": {"$regex": search, "$options": "i"}},
+            {"warranty": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}},
         ]
     cursor = get_db().products.find(query).sort([("featured", -1), ("name", 1)])
@@ -413,6 +454,7 @@ async def dashboard(_: dict[str, Any] = Depends(require_roles("owner", "admin", 
         "orders": await db.orders.count_documents({}),
         "new_orders": await db.orders.count_documents({"status": "New Order"}),
         "leads": await db.leads.count_documents({}),
+        "brands": await db.brands.count_documents({"active": {"$ne": False}}),
         "gallery": await db.gallery.count_documents({"active": {"$ne": False}}),
         "certificates": await db.certificates.count_documents({"active": {"$ne": False}}),
         "customers": await db.users.count_documents({"role": "customer"}),
