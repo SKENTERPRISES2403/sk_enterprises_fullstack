@@ -57,20 +57,77 @@ const emptyBrandItem = {
   active: true,
 };
 
-const reviews = [
-  {
-    name: "Dheeraj Pandey",
-    text: "Shopkeeper ka nature bahut accha hai. ESSEL fittings genuine rate par mile aur warranty card ke saath proper guidance bhi mili.",
-  },
-  {
-    name: "Vivek Mishra",
-    text: "Mere ghar ke bathroom ke liye tiles, sanitary aur Roff material yahin se liya. Rate clear tha aur delivery bhi time par ho gayi.",
-  },
-  {
-    name: "Ramesh Gupta",
-    text: "Builder work ke liye Supreme pipes aur bath fittings chahiye the. Bulk quantity par achha price mila aur GST bill bhi proper mila.",
-  },
-];
+const featureCardsByLang = {
+  en: [
+    ["📜", "Genuine Products", "100% original company supplied products."],
+    ["💰", "Wholesale Pricing", "Best market price for retail and bulk orders."],
+    ["🚚", "Fast Delivery", "Quick material delivery directly to your site."],
+    ["🧾", "GST Billing", "Transparent pricing with proper GST invoices."],
+    ["🏗️", "Contractor Support", "Special priority processing for builders and plumbers."],
+    ["✅", "Authorized Dealer", "Official dealer for top brands ensuring full warranty."],
+  ],
+  hi: [
+    ["📜", "असली सामान", "100% ओरिजिनल कंपनी सप्लाई वाला सामान।"],
+    ["💰", "थोक रेट", "रिटेल और बल्क ऑर्डर के लिए बढ़िया बाजार भाव।"],
+    ["🚚", "तेज डिलीवरी", "साइट तक सामान की जल्दी और भरोसेमंद डिलीवरी।"],
+    ["🧾", "GST बिलिंग", "साफ रेट और proper GST invoice के साथ बिलिंग।"],
+    ["🏗️", "कॉन्ट्रैक्टर सपोर्ट", "बिल्डर और प्लंबर के लिए priority processing।"],
+    ["✅", "अधिकृत डीलर", "टॉप ब्रांड की official dealership और warranty support।"],
+  ],
+  bho: [
+    ["📜", "असली सामान", "100% ओरिजिनल कंपनी सप्लाई वाला सामान।"],
+    ["💰", "थोक भाव", "रिटेल आ बल्क ऑर्डर खातिर बढ़िया बाजार भाव।"],
+    ["🚚", "जल्दी डिलीवरी", "साइट तक सामान जल्दी आ भरोसेमंद तरीका से पहुंचावल जाला।"],
+    ["🧾", "GST बिलिंग", "साफ रेट आ proper GST invoice के साथ बिलिंग।"],
+    ["🏗️", "ठेकेदार सपोर्ट", "बिल्डर आ प्लंबर लोग खातिर priority processing।"],
+    ["✅", "अधिकृत डीलर", "टॉप ब्रांड के official dealership आ warranty support।"],
+  ],
+};
+
+const reviewsByLang = {
+  en: [
+    {
+      name: "Dheeraj Pandey",
+      text: "The shopkeeper's nature is very good. I got ESSEL fittings at a genuine rate with proper warranty card and guidance.",
+    },
+    {
+      name: "Vivek Mishra",
+      text: "I purchased tiles, sanitaryware and Roff material for my bathroom from here. Rates were clear and delivery was on time.",
+    },
+    {
+      name: "Ramesh Gupta",
+      text: "For builder work I needed Supreme pipes and bath fittings. Bulk pricing was good and GST billing was proper.",
+    },
+  ],
+  hi: [
+    {
+      name: "Dheeraj Pandey",
+      text: "दुकानदार का व्यवहार बहुत अच्छा है। ESSEL fittings सही रेट पर मिली और warranty card के साथ पूरी जानकारी भी दी।",
+    },
+    {
+      name: "Vivek Mishra",
+      text: "घर के bathroom के लिए tiles, sanitary और Roff material यहीं से लिया। रेट clear था और delivery भी time पर हुई।",
+    },
+    {
+      name: "Ramesh Gupta",
+      text: "Builder work के लिए Supreme pipes और bath fittings चाहिए थे। Bulk quantity पर अच्छा price मिला और GST bill proper मिला।",
+    },
+  ],
+  bho: [
+    {
+      name: "Dheeraj Pandey",
+      text: "दुकानदार के व्यवहार बहुत नीमन बा। ESSEL fittings सही रेट पर मिलल आ warranty card के साथ पूरा जानकारी भी मिलल।",
+    },
+    {
+      name: "Vivek Mishra",
+      text: "घर के bathroom खातिर tiles, sanitary आ Roff material इहे दुकान से लिहनी। रेट साफ रहे आ delivery समय पर भइल।",
+    },
+    {
+      name: "Ramesh Gupta",
+      text: "Builder work खातिर Supreme pipes आ bath fittings चाहीं रहे। Bulk quantity पर बढ़िया price मिलल आ GST bill proper मिलल।",
+    },
+  ],
+};
 
 const copy = {
   en: {
@@ -424,7 +481,7 @@ function App() {
 
   return (
     <>
-      <Header auth={auth} cartQty={cartQty} setPage={setPage} logout={logout} lang={lang} setLang={setLang} t={t} />
+      <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={lang} setLang={setLang} t={t} />
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
 
       {page === "store" && (
@@ -465,7 +522,7 @@ function App() {
       )}
 
       {page === "login" && (
-        <LoginPage onAuth={handleAuth} />
+        <LoginPage auth={auth} logout={logout} onAuth={handleAuth} setPage={setPage} />
       )}
 
       {page === "orders" && (
@@ -482,7 +539,7 @@ function App() {
   );
 }
 
-function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
+function Header({ auth, cartQty, setPage, lang, setLang, t }) {
   const adminRole = ["owner", "admin", "staff"].includes(auth?.user?.role);
   const jumpTo = (id) => {
     setPage("store");
@@ -513,9 +570,9 @@ function Header({ auth, cartQty, setPage, logout, lang, setLang, t }) {
           ))}
         </div>
         {auth ? (
-          <button className="soft-button" onClick={logout}>{auth.user.name}</button>
+          <button className="soft-button account-button" onClick={() => setPage("login")}>{auth.user.name}</button>
         ) : (
-          <button className="soft-button" onClick={() => setPage("login")}>{t("login")}</button>
+          <button className="soft-button account-button" onClick={() => setPage("login")}>{t("login")}</button>
         )}
         <button className="cart-button" onClick={() => setPage("cart")}>{t("cart")} <b>{cartQty}</b></button>
       </div>
@@ -537,6 +594,7 @@ function LanguageSelect({ lang, setLang }) {
 
 export function StorePage({
   t,
+  lang,
   featured,
   products,
   brands,
@@ -553,6 +611,32 @@ export function StorePage({
   submitLead,
   openDetail,
 }) {
+  const activeProductFilter = Boolean(selectedBrand || query.trim() || category !== "All");
+  const jumpToProductResults = () => {
+    window.setTimeout(() => document.getElementById("products-list")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
+  const clearFilters = () => {
+    setSelectedBrand("");
+    setQuery("");
+    setCategory("All");
+  };
+  const productResults = (
+    <>
+      {activeProductFilter && (
+        <div className="filter-strip">
+          <b>{selectedBrand ? `${selectedBrand} products` : query.trim() ? "Search results" : `${category} products`}</b>
+          <button onClick={clearFilters}>Clear</button>
+        </div>
+      )}
+      <div className="product-grid" id="products-list">
+        {!products.length && <Empty message="No products found. Try another brand or search." />}
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
+        ))}
+      </div>
+    </>
+  );
+
   return (
     <main>
       <section className="hero">
@@ -578,23 +662,39 @@ export function StorePage({
 
       <section className="section" id="products">
         <SectionHead title={t("catalog")} sub={t("featuredSub")} />
-        <form className="toolbar search-toolbar" onSubmit={(event) => { event.preventDefault(); setSelectedBrand(""); }}>
+        <form className="toolbar search-toolbar" onSubmit={(event) => { event.preventDefault(); setSelectedBrand(""); jumpToProductResults(); }}>
           <div className="search-box">
             <input value={query} onChange={(event) => { setQuery(event.target.value); setSelectedBrand(""); }} placeholder={t("search")} />
             <button type="submit" aria-label="Search">🔍</button>
           </div>
-          <select value={category} onChange={(event) => setCategory(event.target.value)}>
+          <select
+            value={category}
+            onChange={(event) => {
+              setCategory(event.target.value);
+              setSelectedBrand("");
+              if (event.target.value !== "All") jumpToProductResults();
+            }}
+          >
             <option>All</option>
             {categories.map((item) => <option key={item}>{item}</option>)}
           </select>
         </form>
         <div className="category-tabs">
           {["All", ...categories].map((item) => (
-            <button key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>
+            <button
+              key={item}
+              className={category === item ? "active" : ""}
+              onClick={() => {
+                setCategory(item);
+                setSelectedBrand("");
+                if (item !== "All") jumpToProductResults();
+              }}
+            >
               {item === "All" ? t("all") : item}
             </button>
           ))}
         </div>
+        {activeProductFilter && productResults}
         <ShopByBrand
           brands={brands}
           selectedBrand={selectedBrand}
@@ -602,27 +702,16 @@ export function StorePage({
             setSelectedBrand(brand.name);
             setQuery("");
             setCategory("All");
-            window.setTimeout(() => document.getElementById("products-list")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+            jumpToProductResults();
           }}
         />
-        {(selectedBrand || query || category !== "All") && (
-          <div className="filter-strip">
-            <b>{selectedBrand ? `${selectedBrand} products` : "Search results"}</b>
-            <button onClick={() => { setSelectedBrand(""); setQuery(""); setCategory("All"); }}>Clear</button>
-          </div>
-        )}
-        <div className="product-grid" id="products-list">
-          {!products.length && <Empty message="No products found. Try another brand or search." />}
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
-          ))}
-        </div>
+        {!activeProductFilter && productResults}
       </section>
 
-      <WhyUs t={t} />
+      <WhyUs t={t} lang={lang} />
       <DealershipSection t={t} certificates={certificates} />
       <ShowroomGallery gallery={gallery} t={t} />
-      <ReviewsSection t={t} />
+      <ReviewsSection t={t} lang={lang} />
       <ContactSection t={t} submitLead={submitLead} />
     </main>
   );
@@ -702,7 +791,7 @@ function AnimatedCounter({ target, suffix = "" }) {
   const [value, setValue] = useState(0);
   useEffect(() => {
     let frame = 0;
-    const totalFrames = 70;
+    const totalFrames = 110;
     const timer = window.setInterval(() => {
       frame += 1;
       const progress = Math.min(frame / totalFrames, 1);
@@ -746,15 +835,8 @@ function ProductCard({ product, addToCart, openDetail, t }) {
   );
 }
 
-function WhyUs({ t }) {
-  const items = [
-    ["📜", t("feature1Title"), t("feature1Text")],
-    ["💰", t("feature2Title"), t("feature2Text")],
-    ["🚚", t("feature3Title"), t("feature3Text")],
-    ["🧾", t("feature4Title"), t("feature4Text")],
-    ["🏗️", t("feature5Title"), t("feature5Text")],
-    ["✅", t("feature6Title"), t("feature6Text")],
-  ];
+function WhyUs({ t, lang }) {
+  const items = featureCardsByLang[lang] || featureCardsByLang.en;
   return (
     <section className="section why-us" id="why">
       <SectionHead title={t("whyTitle")} />
@@ -812,7 +894,8 @@ function ShowroomGallery({ gallery, t }) {
   );
 }
 
-function ReviewsSection({ t }) {
+function ReviewsSection({ t, lang }) {
+  const reviews = reviewsByLang[lang] || reviewsByLang.en;
   return (
     <section className="section reviews-section">
       <SectionHead title={t("reviews")} sub={t("reviewsSub")} />
@@ -970,8 +1053,34 @@ export function CheckoutPage({ auth, cart, placeOrder, setPage }) {
   );
 }
 
-export function LoginPage({ onAuth }) {
+export function LoginPage({ auth, logout, onAuth, setPage }) {
   const [mode, setMode] = useState("login");
+  const adminRole = ["owner", "admin", "staff"].includes(auth?.user?.role);
+
+  if (auth) {
+    return (
+      <main className="section narrow">
+        <div className="section-head">
+          <span className="pill">Account</span>
+          <h1>{auth.user.name}</h1>
+          <p>You are logged in. Logout will happen only when you press the red button.</p>
+        </div>
+        <div className="panel-form account-panel">
+          <div className="account-summary">
+            <b>{auth.user.name}</b>
+            <span>{auth.user.phone}</span>
+            <small>{auth.user.role}</small>
+          </div>
+          <div className="account-actions">
+            <button className="text-button" onClick={() => setPage("orders")}>My Orders</button>
+            {adminRole && <button className="text-button" onClick={() => setPage("admin")}>Admin Panel</button>}
+            <button className="logout-button" onClick={logout}>Logout</button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="section narrow">
       <div className="section-head">

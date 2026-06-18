@@ -155,6 +155,13 @@ img {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.account-button {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .header-actions {
   justify-content: flex-end;
 }
@@ -954,6 +961,51 @@ textarea {
   font-size: 1.35rem;
 }
 
+.account-panel {
+  gap: 18px;
+}
+
+.account-summary {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  background: #f8fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.account-summary b {
+  color: var(--navy);
+  font-size: 1.25rem;
+}
+
+.account-summary span,
+.account-summary small {
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.account-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.logout-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  color: var(--white);
+  background: var(--red);
+  border: 0;
+  border-radius: 8px;
+  font-weight: 950;
+}
+
+.logout-button:hover {
+  background: #c93636;
+}
+
 .two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1407,20 +1459,44 @@ textarea {
     grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 7px 10px;
+    align-items: center;
+    justify-content: stretch;
     flex-wrap: nowrap;
   }
 
   .soft-button {
     display: inline-flex;
+    justify-content: center;
     min-height: 38px;
     padding: 8px 9px;
     white-space: nowrap;
   }
 
+  .account-button {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    max-width: 140px;
+  }
+
   .cart-button {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
     min-height: 38px;
     padding: 8px 10px;
+  }
+
+  .lang-select-wrap {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    justify-self: start;
+    min-width: 0;
   }
 
   .lang-select-wrap select {
