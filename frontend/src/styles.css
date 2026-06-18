@@ -792,6 +792,66 @@ textarea {
   color: var(--orange);
 }
 
+.price-block {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.selling-line {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selling-line b {
+  color: var(--orange);
+  font-size: 1.18rem;
+  line-height: 1;
+}
+
+.selling-line span {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 4px 7px;
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.mrp-line {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.mrp-line s {
+  color: #7b8794;
+}
+
+.quote-price {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--orange);
+}
+
+.price-block.large {
+  margin: 8px 0 16px;
+  padding: 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+}
+
+.price-block.large .selling-line b {
+  font-size: 1.75rem;
+}
+
 .card-actions {
   padding: 0 15px 15px;
 }

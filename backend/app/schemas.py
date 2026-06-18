@@ -1,19 +1,36 @@
 from __future__ import annotations
 
+import re
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 Role = Literal["customer", "staff", "admin", "owner"]
 OrderStatus = Literal["New Order", "Confirmed", "Packed", "Out for Delivery", "Delivered", "Cancelled"]
 LeadStatus = Literal["New", "Contacted", "Converted", "Closed"]
 
 
-class LoginIn(BaseModel):
+def validate_phone(value: str) -> str:
+    phone = str(value).strip()
+    if not re.fullmatch(r"\d{10}", phone):
+        raise ValueError("Phone number must be exactly 10 digits")
+    return phone
+
+
+class PhoneIn(BaseModel):
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def phone_must_be_10_digits(cls, value: str) -> str:
+        return validate_phone(value)
+
+
+class LoginIn(PhoneIn):
     phone: str
     password: str
 
 
-class RegisterIn(BaseModel):
+class RegisterIn(PhoneIn):
     name: str
     phone: str
     password: str
@@ -51,14 +68,22 @@ class BrandIn(BaseModel):
     active: bool = True
 
 
-class AddressIn(BaseModel):
+class AddressIn(PhoneIn):
     label: str = "Home"
     name: str
     phone: str
     line1: str
-    line2: str = ""
+    line2: str
     city: str = "Prayagraj"
     pincode: str = ""
+
+    @field_validator("line1", "line2")
+    @classmethod
+    def address_lines_required(cls, value: str) -> str:
+        text = str(value).strip()
+        if not text:
+            raise ValueError("Address line 1 and address line 2 are required")
+        return text
 
 
 class CartItemIn(BaseModel):
@@ -79,7 +104,7 @@ class OrderStatusIn(BaseModel):
     status: OrderStatus
 
 
-class LeadIn(BaseModel):
+class LeadIn(PhoneIn):
     name: str
     phone: str
     category: str = ""

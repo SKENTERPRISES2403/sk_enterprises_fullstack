@@ -20,8 +20,8 @@ PRODUCTS = [
         "name": "ESSEL CP Fittings Set",
         "brand": "ESSEL",
         "category": "CP Fittings",
-        "price": 0,
-        "mrp": 0,
+        "price": 2499,
+        "mrp": 3499,
         "stock": 25,
         "warranty": "Company warranty",
         "description": "Chrome finish taps, mixers and bathroom CP fittings.",
@@ -32,8 +32,8 @@ PRODUCTS = [
         "name": "Matte Black Tap Collection",
         "brand": "TOYO / ESSEL",
         "category": "CP Fittings",
-        "price": 0,
-        "mrp": 0,
+        "price": 1899,
+        "mrp": 2599,
         "stock": 18,
         "warranty": "As per brand",
         "description": "Premium matte black fittings for modern bathrooms.",
@@ -44,8 +44,8 @@ PRODUCTS = [
         "name": "FlowKem PTMT Taps",
         "brand": "FlowKem",
         "category": "CP Fittings",
-        "price": 0,
-        "mrp": 0,
+        "price": 299,
+        "mrp": 449,
         "stock": 30,
         "warranty": "Brand warranty",
         "description": "FlowKem PTMT taps, fittings, pipes and tanks for home and project use.",
@@ -56,8 +56,8 @@ PRODUCTS = [
         "name": "Birla Pivot Western Toilet",
         "brand": "Birla Pivot",
         "category": "Sanitaryware",
-        "price": 0,
-        "mrp": 0,
+        "price": 7490,
+        "mrp": 9490,
         "stock": 12,
         "warranty": "Brand warranty",
         "description": "Modern western toilet and sanitaryware options.",
@@ -68,8 +68,8 @@ PRODUCTS = [
         "name": "Bathroom Setup Combo",
         "brand": "ESSEL / Cera / Birla Pivot",
         "category": "Sanitaryware",
-        "price": 0,
-        "mrp": 0,
+        "price": 15990,
+        "mrp": 21990,
         "stock": 10,
         "warranty": "As per selected items",
         "description": "Bathroom sanitaryware, tiles and fittings bundle for new homes.",
@@ -80,8 +80,8 @@ PRODUCTS = [
         "name": "Floor & Wall Tiles",
         "brand": "Somany / Oasis / Nexcera",
         "category": "Tiles",
-        "price": 0,
-        "mrp": 0,
+        "price": 64,
+        "mrp": 85,
         "stock": 400,
         "warranty": "",
         "description": "Ceramic, vitrified and porcelain tile range.",
@@ -92,8 +92,8 @@ PRODUCTS = [
         "name": "Designer Tile Samples",
         "brand": "Ambani / Somany / Oasis",
         "category": "Tiles",
-        "price": 0,
-        "mrp": 0,
+        "price": 72,
+        "mrp": 95,
         "stock": 250,
         "warranty": "",
         "description": "Texture and color samples for bathrooms, kitchens and floors.",
@@ -104,8 +104,8 @@ PRODUCTS = [
         "name": "Water Tanks",
         "brand": "Sintex / Supreme",
         "category": "Water Tanks",
-        "price": 0,
-        "mrp": 0,
+        "price": 4490,
+        "mrp": 5790,
         "stock": 14,
         "warranty": "Brand warranty",
         "description": "Durable water storage tanks for home and project use.",
@@ -116,8 +116,8 @@ PRODUCTS = [
         "name": "Supreme & Ashirvad Pipes",
         "brand": "Supreme / Ashirvad",
         "category": "Pipes",
-        "price": 0,
-        "mrp": 0,
+        "price": 95,
+        "mrp": 125,
         "stock": 200,
         "warranty": "Brand warranty",
         "description": "Plumbing pipes and fittings for residential and project needs.",
@@ -128,8 +128,8 @@ PRODUCTS = [
         "name": "Kitchen Sink Range",
         "brand": "Nirali / ESSEL / Gunjan",
         "category": "Kitchen Sinks",
-        "price": 0,
-        "mrp": 0,
+        "price": 2690,
+        "mrp": 3490,
         "stock": 20,
         "warranty": "As per brand",
         "description": "Scratch-resistant kitchen sinks in multiple sizes.",
@@ -140,8 +140,8 @@ PRODUCTS = [
         "name": "Roff Tile Adhesive",
         "brand": "Roff by Pidilite",
         "category": "Construction Chemicals",
-        "price": 0,
-        "mrp": 0,
+        "price": 420,
+        "mrp": 550,
         "stock": 75,
         "warranty": "",
         "description": "Tile and stone fixing adhesives, grouts and chemicals.",
@@ -152,8 +152,8 @@ PRODUCTS = [
         "name": "Araldite Epoxy Adhesive",
         "brand": "Araldite",
         "category": "Construction Chemicals",
-        "price": 0,
-        "mrp": 0,
+        "price": 180,
+        "mrp": 240,
         "stock": 40,
         "warranty": "As per brand",
         "description": "Strong epoxy adhesive for repair, bonding and project work.",
@@ -304,11 +304,19 @@ async def seed_database(db) -> None:
         )
 
     for product in PRODUCTS:
-        await db.products.update_one(
-            {"name": product["name"]},
-            {"$setOnInsert": {**product, "active": True, "created_at": now, "updated_at": now}},
-            upsert=True,
-        )
+        existing = await db.products.find_one({"name": product["name"]})
+        if existing:
+            updates = {}
+            if not float(existing.get("price") or 0):
+                updates["price"] = product["price"]
+            if not float(existing.get("mrp") or 0):
+                updates["mrp"] = product["mrp"]
+            if updates:
+                updates["updated_at"] = now
+                await db.products.update_one({"_id": existing["_id"]}, {"$set": updates})
+            continue
+
+        await db.products.insert_one({**product, "active": True, "created_at": now, "updated_at": now})
 
     for brand in BRANDS:
         await db.brands.update_one(

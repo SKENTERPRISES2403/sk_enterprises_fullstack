@@ -447,10 +447,14 @@ function App() {
   }
 
   async function handleLead(form) {
-    const payload = Object.fromEntries(new FormData(form));
-    await api.createLead(payload);
-    setNotice("Inquiry saved. We will contact you soon.");
-    form.reset();
+    try {
+      const payload = Object.fromEntries(new FormData(form));
+      await api.createLead(payload);
+      setNotice("Inquiry saved. We will contact you soon.");
+      form.reset();
+    } catch (error) {
+      setNotice(error.message || "Inquiry failed. Please check phone number.");
+    }
   }
 
   async function placeOrder(form) {
@@ -473,17 +477,21 @@ function App() {
         name: data.name,
         phone: data.phone,
         line1: data.line1,
-        line2: data.line2 || "",
+        line2: data.line2,
         city: data.city || "Prayagraj",
         pincode: data.pincode || "",
       },
     };
-    const result = await api.createOrder(payload, auth.token);
-    setCart([]);
-    setNotice(`Order ${result.order.order_no} placed`);
-    const url = `https://wa.me/${result.whatsapp_number || whatsappNumber}?text=${encodeURIComponent(result.whatsapp_text)}`;
-    window.open(url, "_blank", "noopener");
-    setPage("orders");
+    try {
+      const result = await api.createOrder(payload, auth.token);
+      setCart([]);
+      setNotice(`Order ${result.order.order_no} placed`);
+      const url = `https://wa.me/${result.whatsapp_number || whatsappNumber}?text=${encodeURIComponent(result.whatsapp_text)}`;
+      window.open(url, "_blank", "noopener");
+      setPage("orders");
+    } catch (error) {
+      setNotice(error.message || "Order failed. Please check phone and address.");
+    }
   }
 
   return (
@@ -830,6 +838,77 @@ function SectionHead({ kicker, title, sub }) {
   );
 }
 
+function PhoneInput({ name = "phone", placeholder = "Phone number", defaultValue = "", ...props }) {
+  const syncValidity = (input) => {
+    input.setCustomValidity(input.value && input.value.length !== 10 ? "Enter exactly 10 digits only." : "");
+  };
+  return (
+    <input
+      {...props}
+      name={name}
+      type="tel"
+      inputMode="numeric"
+      autoComplete="tel"
+      pattern="[0-9]{10}"
+      maxLength={10}
+      defaultValue={defaultValue}
+      placeholder={placeholder}
+      title="Enter exactly 10 digits only"
+      onBeforeInput={(event) => {
+        if (event.data && !/^\d+$/.test(event.data)) event.preventDefault();
+      }}
+      onPaste={(event) => {
+        const input = event.currentTarget;
+        const pasted = event.clipboardData.getData("text").trim();
+        const selected = Math.max(0, Number(input.selectionEnd) - Number(input.selectionStart));
+        const nextLength = input.value.length - selected + pasted.length;
+        if (!/^\d+$/.test(pasted) || nextLength > 10) {
+          event.preventDefault();
+          input.setCustomValidity("Enter exactly 10 digits only.");
+          input.reportValidity();
+        }
+      }}
+      onInput={(event) => {
+        const input = event.currentTarget;
+        input.value = input.value.replace(/\D/g, "").slice(0, 10);
+        syncValidity(input);
+      }}
+      onInvalid={(event) => {
+        event.currentTarget.setCustomValidity("Enter exactly 10 digits only.");
+      }}
+    />
+  );
+}
+
+function formatRupees(value) {
+  return `Rs ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
+}
+
+function getProductPricing(product) {
+  const price = Number(product.price || 0);
+  const mrp = Number(product.mrp || 0);
+  const discount = mrp > price && price > 0 ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  return { price, mrp, discount, hasPrice: price > 0 };
+}
+
+function PriceBlock({ product, t, large = false }) {
+  const { price, mrp, discount, hasPrice } = getProductPricing(product);
+  if (!hasPrice) return <b className="quote-price">{t("askQuote")}</b>;
+  return (
+    <div className={`price-block ${large ? "large" : ""}`}>
+      <div className="selling-line">
+        <b>{formatRupees(price)}</b>
+        {discount > 0 && <span>{discount}% OFF</span>}
+      </div>
+      {mrp > price && (
+        <div className="mrp-line">
+          MRP <s>{formatRupees(mrp)}</s>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProductCard({ product, addToCart, openDetail, t }) {
   return (
     <article className="product-card">
@@ -841,7 +920,7 @@ function ProductCard({ product, addToCart, openDetail, t }) {
         <small>{product.category}</small>
         <h3>{product.name}</h3>
         <p>{product.brand}</p>
-        <b>{product.price ? `Rs ${product.price}` : t("askQuote")}</b>
+        <PriceBlock product={product} t={t} />
       </div>
       <div className="card-actions">
         <button onClick={() => openDetail(product)}>{t("details")}</button>
@@ -948,7 +1027,7 @@ function ContactSection({ t, submitLead }) {
       <form className="panel-form lead-form" onSubmit={(event) => { event.preventDefault(); submitLead(event.currentTarget); }}>
         <h3>{t("formTitle")}</h3>
         <input name="name" placeholder={t("formName")} required />
-        <input name="phone" placeholder={t("formPhone")} required />
+        <PhoneInput placeholder={t("formPhone")} required />
         <select name="category" defaultValue="">
           <option value="">{t("formCategory")}</option>
           {defaultCategories.map((item) => <option key={item}>{item}</option>)}
@@ -983,10 +1062,11 @@ export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[k
         <span className="pill">{product.category}</span>
         <h1>{product.name}</h1>
         <p>{product.description}</p>
+        <PriceBlock product={product} t={t} large />
         <dl>
           <div><dt>Brand</dt><dd>{product.brand || "-"}</dd></div>
-          <div><dt>Price</dt><dd>{product.price ? `Rs ${product.price}` : t("finalRate")}</dd></div>
-          <div><dt>MRP</dt><dd>{product.mrp ? `Rs ${product.mrp}` : "-"}</dd></div>
+          <div><dt>SP</dt><dd>{product.price ? formatRupees(product.price) : t("finalRate")}</dd></div>
+          <div><dt>MRP</dt><dd>{product.mrp ? formatRupees(product.mrp) : "-"}</dd></div>
           <div><dt>Stock</dt><dd>{product.stock}</dd></div>
           <div><dt>Warranty</dt><dd>{product.warranty || "-"}</dd></div>
         </dl>
@@ -1015,7 +1095,7 @@ export function CartPage({ cart, updateQty, setPage, t = (key) => copy.en[key] |
           <img src={imageUrl(item.image_url)} alt={item.name} />
           <div>
             <h3>{item.name}</h3>
-            <p>{item.price ? `Rs ${item.price}` : "Quote item"}</p>
+            <p>{item.price ? formatRupees(item.price) : "Quote item"}</p>
           </div>
           <div className="qty-box">
             <button onClick={() => updateQty(item.product_id, item.quantity - 1)}>-</button>
@@ -1050,9 +1130,9 @@ export function CheckoutPage({ auth, cart, placeOrder, setPage }) {
       </div>
       <form className="panel-form" onSubmit={(event) => { event.preventDefault(); placeOrder(event.currentTarget); }}>
         <input name="name" defaultValue={auth.user.name} placeholder="Name" required />
-        <input name="phone" defaultValue={auth.user.phone} placeholder="Phone" required />
+        <PhoneInput defaultValue={auth.user.phone} placeholder="Phone" required />
         <input name="line1" placeholder="Address line 1" required />
-        <input name="line2" placeholder="Address line 2" />
+        <input name="line2" placeholder="Address line 2" required />
         <div className="two-col">
           <input name="city" defaultValue="Prayagraj" placeholder="City" />
           <input name="pincode" placeholder="Pincode" />
@@ -1113,7 +1193,7 @@ export function LoginPage({ auth, logout, onAuth, setPage, initialMode = "login"
       </div>
       <form className="panel-form auth-form" onSubmit={(event) => { event.preventDefault(); onAuth(mode, event.currentTarget); }}>
         {mode === "register" && <input name="name" placeholder="Full name" required />}
-        <input name="phone" placeholder="Phone number" required />
+        <PhoneInput placeholder="Phone number" required />
         <input name="password" type="password" placeholder="Password" required />
         <button className="primary">{mode === "login" ? "Login" : "Register"}</button>
       </form>
@@ -1493,8 +1573,8 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
           {defaultCategories.map((item) => <option key={item}>{item}</option>)}
         </select>
         <div className="two-col">
-          <input name="price" type="number" defaultValue={product.price} placeholder="Price" />
-          <input name="mrp" type="number" defaultValue={product.mrp} placeholder="MRP" />
+          <input name="price" type="number" min="0" defaultValue={product.price} placeholder="Selling Price (SP)" required />
+          <input name="mrp" type="number" min="0" defaultValue={product.mrp} placeholder="MRP" required />
         </div>
         <div className="two-col">
           <input name="stock" type="number" defaultValue={product.stock} placeholder="Stock" />
@@ -1513,7 +1593,7 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
           <article className="admin-row" key={item.id}>
             <img src={imageUrl(item.image_url)} alt={item.name} />
             <div><b>{item.name}</b><small>{item.category} / {item.brand}</small></div>
-            <span>Stock {item.stock}</span>
+            <span>{item.price ? `${formatRupees(item.price)} SP / Stock ${item.stock}` : `Quote / Stock ${item.stock}`}</span>
             <button onClick={() => setEditing(item)}>Edit</button>
             {canDelete && <button className="danger" onClick={() => deleteProduct(item.id)}>Delete</button>}
           </article>
@@ -1630,7 +1710,7 @@ function StaffAdmin({ createStaff }) {
       <div className="section-head"><span className="pill">Owner controls</span><h1>Create Staff / Admin</h1></div>
       <form className="panel-form" onSubmit={(event) => { event.preventDefault(); createStaff(event.currentTarget); }}>
         <input name="name" placeholder="Name" required />
-        <input name="phone" placeholder="Phone" required />
+        <PhoneInput placeholder="Phone" required />
         <input name="password" placeholder="Password" required />
         <select name="role">
           <option value="staff">Staff</option>
