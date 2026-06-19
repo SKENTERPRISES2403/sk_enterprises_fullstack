@@ -58,8 +58,6 @@ const emptyBrandItem = {
 };
 
 let statsCountersPlayed = false;
-const nativeApkUrl = "/downloads/SK-Enterprises.apk";
-const nativeAppUrl = "skenterprises://open";
 
 const featureCardsByLang = {
   en: [
@@ -353,9 +351,6 @@ function App() {
   const [auth, setAuth] = useLocalStorage("sk_fullstack_auth", null);
   const [notice, setNotice] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(true);
-  const [installPromptEvent, setInstallPromptEvent] = useState(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -363,59 +358,6 @@ function App() {
 
   useEffect(() => {
     loadCatalog();
-  }, []);
-
-  useEffect(() => {
-    const standaloneQuery = window.matchMedia?.("(display-mode: standalone)");
-    const isStandaloneNow = () => Boolean(standaloneQuery?.matches || window.navigator.standalone);
-    const isNativeApp = () => {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("native_app") === "1" || navigator.userAgent.includes("SKEnterprisesApp");
-    };
-    const shouldHideInstallPrompt = () =>
-      isStandaloneNow()
-      || isNativeApp()
-      || localStorage.getItem("sk_native_app_downloaded") === "1"
-      || sessionStorage.getItem("sk_install_prompt_closed") === "1";
-    const updateStandaloneState = () => {
-      setIsStandaloneApp(isStandaloneNow() || isNativeApp());
-    };
-    if (isNativeApp()) {
-      localStorage.setItem("sk_native_app_opened", "1");
-      setIsStandaloneApp(true);
-      setShowInstallPrompt(false);
-    }
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setInstallPromptEvent(null);
-      if (!shouldHideInstallPrompt()) {
-        setShowInstallPrompt(true);
-      }
-    };
-    const handleAppInstalled = () => {
-      window.clearTimeout(promptTimer);
-      sessionStorage.setItem("sk_install_prompt_closed", "1");
-      localStorage.removeItem("sk_fullstack_auth");
-      setAuth(null);
-      setInstallPromptEvent(null);
-      setShowInstallPrompt(false);
-      setNotice("App installed. Please login again when you open the app.");
-    };
-    const promptTimer = window.setTimeout(() => {
-      if (!shouldHideInstallPrompt()) {
-        setShowInstallPrompt(true);
-      }
-    }, 3500);
-    updateStandaloneState();
-    standaloneQuery?.addEventListener?.("change", updateStandaloneState);
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", handleAppInstalled);
-    return () => {
-      window.clearTimeout(promptTimer);
-      standaloneQuery?.removeEventListener?.("change", updateStandaloneState);
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
   }, []);
 
   const t = (key) => copy[lang]?.[key] || copy.en[key] || key;
@@ -540,30 +482,6 @@ function App() {
     setPage("store");
   }
 
-  async function installApp() {
-    sessionStorage.setItem("sk_install_prompt_closed", "1");
-    setInstallPromptEvent(null);
-    setShowInstallPrompt(false);
-    const startedAt = Date.now();
-    const opener = document.createElement("iframe");
-    opener.style.display = "none";
-    opener.src = nativeAppUrl;
-    document.body.appendChild(opener);
-    window.setTimeout(() => {
-      opener.remove();
-      if (document.visibilityState === "visible" && Date.now() - startedAt < 2400) {
-        localStorage.setItem("sk_native_app_downloaded", "1");
-        window.location.href = nativeApkUrl;
-        setNotice("App installed nahi mila, APK download start ho raha hai.");
-      }
-    }, 1200);
-  }
-
-  function closeInstallPrompt() {
-    sessionStorage.setItem("sk_install_prompt_closed", "1");
-    setShowInstallPrompt(false);
-  }
-
   async function handleLead(form) {
     try {
       const payload = Object.fromEntries(new FormData(form));
@@ -616,11 +534,6 @@ function App() {
     <>
       <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={lang} setLang={setLang} t={t} />
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
-      <AppInstallPrompt
-        show={showInstallPrompt && !isStandaloneApp}
-        onInstall={installApp}
-        onClose={closeInstallPrompt}
-      />
 
       {page === "store" && (
         <StorePage
@@ -739,21 +652,6 @@ function LanguageSelect({ lang, setLang }) {
         <option value="bho">भोजपुरी</option>
       </select>
     </label>
-  );
-}
-
-function AppInstallPrompt({ show, onInstall, onClose }) {
-  if (!show) return null;
-  return (
-    <div className="app-install-prompt" role="dialog" aria-label="Install S.K. Enterprises app">
-      <img src="/assets/pwa-icon-192.png" alt="S.K. Enterprises app icon" />
-      <div>
-        <b>Open S.K. Enterprises App</b>
-        <span>App installed hai to wahi khulega. Nahi hai to same native APK download hoga.</span>
-      </div>
-      <button className="primary" onClick={onInstall}>Open / Download</button>
-      <button className="install-close" onClick={onClose} aria-label="Close install prompt">x</button>
-    </div>
   );
 }
 
@@ -1095,7 +993,21 @@ function PasswordInput({ name = "password", placeholder = "Password", defaultVal
         aria-label={visible ? "Hide password" : "Show password"}
         title={visible ? "Hide password" : "Show password"}
       >
-        <span className="eye-shape" aria-hidden="true" />
+        <svg className="eye-icon" viewBox="0 0 24 24" aria-hidden="true">
+          {visible ? (
+            <>
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+              <circle cx="12" cy="12" r="3" />
+            </>
+          ) : (
+            <>
+              <path d="M3 3l18 18" />
+              <path d="M10.7 5.2A10.9 10.9 0 0 1 12 5c6 0 9.5 7 9.5 7a18 18 0 0 1-3 4.1" />
+              <path d="M6.6 6.6C3.9 8.4 2.5 12 2.5 12s3.5 7 9.5 7a10.8 10.8 0 0 0 4.7-1.1" />
+              <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+            </>
+          )}
+        </svg>
       </button>
     </div>
   );

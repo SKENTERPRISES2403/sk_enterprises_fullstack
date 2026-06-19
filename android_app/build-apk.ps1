@@ -71,6 +71,10 @@ foreach ($density in $Densities) {
 }
 $SourceImage.Dispose()
 
+$DrawableDir = Join-Path $ResDir "drawable-nodpi"
+New-Item -ItemType Directory -Force -Path $DrawableDir | Out-Null
+Copy-Item -LiteralPath $LogoPath -Destination (Join-Path $DrawableDir "splash_logo.png") -Force
+
 & $Aapt2 compile --dir $ResDir -o $CompiledZip
 if ($LASTEXITCODE -ne 0) { throw "aapt2 compile failed" }
 

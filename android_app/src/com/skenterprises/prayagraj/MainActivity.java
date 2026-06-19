@@ -72,8 +72,9 @@ public class MainActivity extends Activity {
             }
         });
 
+        rootLayout.addView(webView);
         splashLogo = new ImageView(this);
-        splashLogo.setImageResource(R.mipmap.ic_launcher);
+        splashLogo.setImageResource(R.drawable.splash_logo);
         splashLogo.setAdjustViewBounds(true);
         splashLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -82,9 +83,7 @@ public class MainActivity extends Activity {
         splashLayer.setTag("splash");
         splashLayer.setClickable(true);
         splashLayer.setFocusable(true);
-        splashLayer.addView(splashLogo, new FrameLayout.LayoutParams(dp(260), dp(260), Gravity.CENTER));
-
-        rootLayout.addView(webView);
+        splashLayer.addView(splashLogo, new FrameLayout.LayoutParams(dp(330), dp(330), Gravity.CENTER));
         rootLayout.addView(splashLayer, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
