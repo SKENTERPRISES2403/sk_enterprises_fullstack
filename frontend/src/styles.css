@@ -1238,13 +1238,47 @@ textarea {
   background: #eef3f8;
   border: 1px solid var(--line);
   border-radius: 8px;
-  font-size: 1rem;
   font-weight: 950;
 }
 
 .password-field button:hover {
   color: var(--white);
   background: var(--navy);
+}
+
+.eye-shape {
+  position: relative;
+  display: block;
+  width: 21px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 100% 0;
+  transform: rotate(45deg);
+}
+
+.eye-shape::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 999px;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.password-eye::after {
+  position: absolute;
+  width: 26px;
+  height: 2px;
+  background: currentColor;
+  content: "";
+  transform: rotate(-38deg);
+}
+
+.password-eye.showing::after {
+  display: none;
 }
 
 .account-panel {

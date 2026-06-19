@@ -58,6 +58,8 @@ const emptyBrandItem = {
 };
 
 let statsCountersPlayed = false;
+const nativeApkUrl = "/downloads/SK-Enterprises.apk";
+const nativeAppUrl = "skenterprises://open";
 
 const featureCardsByLang = {
   en: [
@@ -366,13 +368,27 @@ function App() {
   useEffect(() => {
     const standaloneQuery = window.matchMedia?.("(display-mode: standalone)");
     const isStandaloneNow = () => Boolean(standaloneQuery?.matches || window.navigator.standalone);
-    const updateStandaloneState = () => {
-      setIsStandaloneApp(isStandaloneNow());
+    const isNativeApp = () => {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("native_app") === "1" || navigator.userAgent.includes("SKEnterprisesApp");
     };
+    const shouldHideInstallPrompt = () =>
+      isStandaloneNow()
+      || isNativeApp()
+      || localStorage.getItem("sk_native_app_downloaded") === "1"
+      || sessionStorage.getItem("sk_install_prompt_closed") === "1";
+    const updateStandaloneState = () => {
+      setIsStandaloneApp(isStandaloneNow() || isNativeApp());
+    };
+    if (isNativeApp()) {
+      localStorage.setItem("sk_native_app_opened", "1");
+      setIsStandaloneApp(true);
+      setShowInstallPrompt(false);
+    }
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
-      setInstallPromptEvent(event);
-      if (sessionStorage.getItem("sk_install_prompt_closed") !== "1") {
+      setInstallPromptEvent(null);
+      if (!shouldHideInstallPrompt()) {
         setShowInstallPrompt(true);
       }
     };
@@ -386,7 +402,7 @@ function App() {
       setNotice("App installed. Please login again when you open the app.");
     };
     const promptTimer = window.setTimeout(() => {
-      if (!isStandaloneNow() && sessionStorage.getItem("sk_install_prompt_closed") !== "1") {
+      if (!shouldHideInstallPrompt()) {
         setShowInstallPrompt(true);
       }
     }, 3500);
@@ -525,21 +541,22 @@ function App() {
   }
 
   async function installApp() {
-    if (!installPromptEvent) {
-      setNotice("Chrome menu se Add to Home screen / Install app option use karein.");
-      setShowInstallPrompt(false);
-      return;
-    }
-    installPromptEvent.prompt();
-    const choice = await installPromptEvent.userChoice;
+    sessionStorage.setItem("sk_install_prompt_closed", "1");
     setInstallPromptEvent(null);
     setShowInstallPrompt(false);
-    if (choice?.outcome === "accepted") {
-      sessionStorage.setItem("sk_install_prompt_closed", "1");
-      localStorage.removeItem("sk_fullstack_auth");
-      setAuth(null);
-      setNotice("App install started. App open karte time login dobara karein.");
-    }
+    const startedAt = Date.now();
+    const opener = document.createElement("iframe");
+    opener.style.display = "none";
+    opener.src = nativeAppUrl;
+    document.body.appendChild(opener);
+    window.setTimeout(() => {
+      opener.remove();
+      if (document.visibilityState === "visible" && Date.now() - startedAt < 2400) {
+        localStorage.setItem("sk_native_app_downloaded", "1");
+        window.location.href = nativeApkUrl;
+        setNotice("App installed nahi mila, APK download start ho raha hai.");
+      }
+    }, 1200);
   }
 
   function closeInstallPrompt() {
@@ -601,7 +618,6 @@ function App() {
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
       <AppInstallPrompt
         show={showInstallPrompt && !isStandaloneApp}
-        canInstall={Boolean(installPromptEvent)}
         onInstall={installApp}
         onClose={closeInstallPrompt}
       />
@@ -726,16 +742,16 @@ function LanguageSelect({ lang, setLang }) {
   );
 }
 
-function AppInstallPrompt({ show, canInstall, onInstall, onClose }) {
+function AppInstallPrompt({ show, onInstall, onClose }) {
   if (!show) return null;
   return (
     <div className="app-install-prompt" role="dialog" aria-label="Install S.K. Enterprises app">
       <img src="/assets/pwa-icon-192.png" alt="S.K. Enterprises app icon" />
       <div>
-        <b>Install S.K. Enterprises App</b>
-        <span>Fast catalog, cart aur order status ke liye app home screen par add kar lo.</span>
+        <b>Open S.K. Enterprises App</b>
+        <span>App installed hai to wahi khulega. Nahi hai to same native APK download hoga.</span>
       </div>
-      <button className="primary" onClick={onInstall}>{canInstall ? "Install" : "How to Install"}</button>
+      <button className="primary" onClick={onInstall}>Open / Download</button>
       <button className="install-close" onClick={onClose} aria-label="Close install prompt">x</button>
     </div>
   );
@@ -1073,12 +1089,13 @@ function PasswordInput({ name = "password", placeholder = "Password", defaultVal
         autoComplete={props.autoComplete || (name === "password" ? "current-password" : "off")}
       />
       <button
+        className={`password-eye ${visible ? "showing" : ""}`}
         type="button"
         onClick={() => setVisible((value) => !value)}
         aria-label={visible ? "Hide password" : "Show password"}
         title={visible ? "Hide password" : "Show password"}
       >
-        <span aria-hidden="true">&#128065;</span>
+        <span className="eye-shape" aria-hidden="true" />
       </button>
     </div>
   );
