@@ -338,7 +338,7 @@ const copy = {
 function App() {
   const [page, setPage] = useHashPage();
   const [lang, setLang] = useLocalStorage("sk_lang", "en");
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(demoProducts);
   const [brands, setBrands] = useState(defaultBrands);
   const [gallery, setGallery] = useState(defaultGallery);
   const [certificates, setCertificates] = useState(defaultCertificates);
@@ -350,6 +350,7 @@ function App() {
   const [cart, setCart] = useLocalStorage("sk_fullstack_cart", []);
   const [auth, setAuth] = useLocalStorage("sk_fullstack_auth", null);
   const [notice, setNotice] = useState("");
+  const [catalogLoading, setCatalogLoading] = useState(true);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -362,6 +363,7 @@ function App() {
   const t = (key) => copy[lang]?.[key] || copy.en[key] || key;
 
   async function loadCatalog() {
+    setCatalogLoading(true);
     try {
       const [productRows, categoryRows, brandRows, galleryRows, certificateRows] = await Promise.all([
         api.getProducts(),
@@ -376,12 +378,14 @@ function App() {
       setGallery(galleryRows.length ? galleryRows : defaultGallery);
       setCertificates(certificateRows.length ? certificateRows : defaultCertificates);
     } catch {
-      setProducts(demoProducts);
+      setProducts((current) => (current.length ? current : demoProducts));
       setCategories(defaultCategories);
       setBrands(defaultBrands);
       setGallery(defaultGallery);
       setCertificates(defaultCertificates);
       setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
+    } finally {
+      setCatalogLoading(false);
     }
   }
 
@@ -547,7 +551,10 @@ function App() {
           setSelectedBrand={setSelectedBrand}
           category={category}
           setCategory={setCategory}
+          cart={cart}
           addToCart={addToCart}
+          updateQty={updateQty}
+          catalogLoading={catalogLoading}
           submitLead={handleLead}
           openDetail={(product) => {
             setSelected(product);
@@ -663,11 +670,18 @@ export function StorePage({
   setSelectedBrand,
   category,
   setCategory,
+  cart,
   addToCart,
+  updateQty,
+  catalogLoading,
   submitLead,
   openDetail,
 }) {
   const activeProductFilter = Boolean(selectedBrand || query.trim() || category !== "All");
+  const cartByProductId = useMemo(
+    () => new Map((cart || []).map((item) => [item.product_id, Number(item.quantity || 0)])),
+    [cart]
+  );
   const jumpToProductResults = () => {
     window.setTimeout(() => document.getElementById("products-list")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
@@ -684,10 +698,19 @@ export function StorePage({
           <button onClick={clearFilters}>Clear</button>
         </div>
       )}
+      {catalogLoading && <div className="catalog-loading">Loading latest stock and prices...</div>}
       <div className="product-grid" id="products-list">
         {!products.length && <Empty message="No products found. Try another brand or search." />}
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} addToCart={addToCart} openDetail={openDetail} t={t} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            cartQuantity={cartByProductId.get(product.id) || 0}
+            addToCart={addToCart}
+            updateQty={updateQty}
+            openDetail={openDetail}
+            t={t}
+          />
         ))}
       </div>
     </>
@@ -955,6 +978,10 @@ function formatRupees(value) {
   return `Rs ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
 }
 
+function statusClass(status) {
+  return `status-${String(status || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+}
+
 function getProductPricing(product) {
   const price = Number(product.price || 0);
   const mrp = Number(product.mrp || 0);
@@ -980,12 +1007,14 @@ function PriceBlock({ product, t, large = false }) {
   );
 }
 
-function ProductCard({ product, addToCart, openDetail, t }) {
-  const inStock = Number(product.stock || 0) > 0;
+function ProductCard({ product, cartQuantity, addToCart, updateQty, openDetail, t }) {
+  const stock = Number(product.stock || 0);
+  const inStock = stock > 0;
+  const inCart = Number(cartQuantity || 0);
   return (
     <article className="product-card">
       <button className="image-button" onClick={() => openDetail(product)}>
-        <img src={imageUrl(product.image_url)} alt={product.name} />
+        <img src={imageUrl(product.image_url)} alt={product.name} loading="lazy" decoding="async" />
         {product.featured && <span>Featured</span>}
       </button>
       <div className="product-body">
@@ -996,7 +1025,17 @@ function ProductCard({ product, addToCart, openDetail, t }) {
       </div>
       <div className="card-actions">
         <button onClick={() => openDetail(product)}>{t("details")}</button>
-        <button className="primary" disabled={!inStock} onClick={() => addToCart(product)}>{inStock ? t("add") : "Out"}</button>
+        {inCart > 0 ? (
+          <div className="card-stepper" aria-label={`${product.name} cart quantity`}>
+            <button onClick={() => updateQty(product.id, inCart - 1)}>-</button>
+            <b>{inCart}</b>
+            <button disabled={inCart >= stock} onClick={() => addToCart(product)}>+</button>
+          </div>
+        ) : (
+          <button className="primary add-cart-button" disabled={!inStock} onClick={() => addToCart(product)}>
+            {inStock ? t("addCart") : "Out"}
+          </button>
+        )}
       </div>
     </article>
   );
@@ -1029,7 +1068,7 @@ function DealershipSection({ t, certificates }) {
       <div className="certs-grid">
         {sorted.map((item) => (
           <article className="cert-card" key={item.title}>
-            <img src={imageUrl(item.image_url)} alt={item.title} />
+            <img src={imageUrl(item.image_url)} alt={item.title} loading="lazy" decoding="async" />
             <div>
               <b>{item.title}</b>
               <small>{item.brand || item.caption}</small>
@@ -1049,7 +1088,7 @@ function ShowroomGallery({ gallery, t }) {
       <div className="gallery-grid">
         {sorted.map((item) => (
           <article className="gallery-card" key={item.id || item.image_url}>
-            <img src={imageUrl(item.image_url)} alt={item.title} />
+            <img src={imageUrl(item.image_url)} alt={item.title} loading="lazy" decoding="async" />
             <div>
               <b>{item.title}</b>
               <p>{item.caption}</p>
@@ -1284,10 +1323,28 @@ export function LoginPage({ auth, logout, onAuth, setPage, initialMode = "login"
 
 export function OrderHistory({ auth, setPage }) {
   const [orders, setOrders] = useState([]);
-  useEffect(() => {
+  const [loading, setLoading] = useState(false);
+
+  async function loadOrders() {
     if (!auth?.token) return;
-    api.myOrders(auth.token).then(setOrders).catch(() => setOrders([]));
-  }, [auth]);
+    setLoading(true);
+    try {
+      const rows = await api.myOrders(auth.token);
+      setOrders(rows);
+    } catch {
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!auth?.token) return undefined;
+    loadOrders();
+    const timer = window.setInterval(loadOrders, 30000);
+    return () => window.clearInterval(timer);
+  }, [auth?.token]);
+
   if (!auth) {
     return (
       <main className="section narrow">
@@ -1298,14 +1355,22 @@ export function OrderHistory({ auth, setPage }) {
   }
   return (
     <main className="section">
-      <div className="section-head"><span className="pill">History</span><h1>My Orders</h1></div>
+      <div className="section-head order-history-head">
+        <span className="pill">History</span>
+        <h1>My Orders</h1>
+        <p>Admin status update karega to yahin latest status dikhega.</p>
+        <button className="text-button" onClick={loadOrders} disabled={loading}>
+          {loading ? "Refreshing..." : "Refresh Status"}
+        </button>
+      </div>
       <div className="table-list">
         {!orders.length && <Empty message="No orders yet." />}
         {orders.map((order) => (
           <article className="order-card" key={order.id}>
             <b>{order.order_no}</b>
-            <span>{order.status}</span>
+            <span className={`status-badge ${statusClass(order.status)}`}>{order.status}</span>
             <small>{order.created_at?.slice(0, 10)}</small>
+            {order.updated_at && <small>Updated: {order.updated_at.slice(0, 10)}</small>}
             <p>{order.items.map((item) => `${item.name} x ${item.quantity}`).join(", ")}</p>
           </article>
         ))}
@@ -1503,6 +1568,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
 
   async function updateOrder(id, status) {
     await api.updateOrderStatus(id, status, auth.token);
+    setMessage(`Order status updated to ${status}. Customer account will show the latest status.`);
     refreshAdmin();
   }
 
@@ -1605,20 +1671,42 @@ function Dashboard({ stats }) {
   );
 }
 
+function AdminField({ label, hint, children }) {
+  return (
+    <label className="form-field">
+      <span>{label}</span>
+      {hint && <small>{hint}</small>}
+      {children}
+    </label>
+  );
+}
+
 function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canDelete }) {
   const brand = editing || emptyBrandItem;
   return (
     <>
       <div className="section-head"><h1>Add / Edit Brand</h1></div>
       <form key={editing?.id || "new-brand"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveBrand(event.currentTarget); }}>
-        <input name="name" defaultValue={brand.name} placeholder="Brand name" required />
-        <input name="warranty" defaultValue={brand.warranty} placeholder="Warranty line" />
-        <textarea name="description" defaultValue={brand.description} placeholder="Brand description" />
+        <AdminField label="Brand name" hint="Company ka naam likho, jaise ESSEL, FlowKem, Roff.">
+          <input name="name" defaultValue={brand.name} placeholder="Brand name" required />
+        </AdminField>
+        <AdminField label="Warranty / short line" hint="Card par dikhne wali short line, jaise 10 years warranty.">
+          <input name="warranty" defaultValue={brand.warranty} placeholder="Warranty line" />
+        </AdminField>
+        <AdminField label="Brand description" hint="Brand ke products ya distributor/dealer info ka chhota description.">
+          <textarea name="description" defaultValue={brand.description} placeholder="Brand description" />
+        </AdminField>
         <div className="two-col">
-          <input name="position" type="number" defaultValue={brand.position} placeholder="Sort order" />
-          <input name="logo_url" defaultValue={brand.logo_url} placeholder="Existing logo URL" />
+          <AdminField label="Sort order" hint="Chhota number pehle dikhega.">
+            <input name="position" type="number" defaultValue={brand.position} placeholder="Sort order" />
+          </AdminField>
+          <AdminField label="Existing logo URL" hint="Agar logo pehle se uploaded hai to URL yahan paste karo.">
+            <input name="logo_url" defaultValue={brand.logo_url} placeholder="Existing logo URL" />
+          </AdminField>
         </div>
-        <input name="logo_file" type="file" accept="image/*" capture="environment" />
+        <AdminField label="Upload logo photo" hint="Phone camera/gallery se brand logo upload karo.">
+          <input name="logo_file" type="file" accept="image/*" capture="environment" />
+        </AdminField>
         <button className="primary">{editing ? "Update Brand" : "Save Brand"}</button>
       </form>
       <div className="table-list">
@@ -1642,27 +1730,51 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
     <>
       <div className="section-head"><h1>Add / Edit Product</h1></div>
       <form key={editing?.id || "new-product"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
-        <input name="name" defaultValue={product.name} placeholder="Product name" required />
-        <input name="brand" list="brand-options" defaultValue={product.brand} placeholder="Brand" />
+        <AdminField label="Product name" hint="Product ka naam likho, jaise FlowKem PTMT Tap ya ESSEL Basin Mixer.">
+          <input name="name" defaultValue={product.name} placeholder="Product name" required />
+        </AdminField>
+        <AdminField label="Brand name" hint="Brand select/type karo, jaise ESSEL, FlowKem, Supreme.">
+          <input name="brand" list="brand-options" defaultValue={product.brand} placeholder="Brand" />
+        </AdminField>
         <datalist id="brand-options">
           {brands.map((item) => <option key={item.id || item.name} value={item.name} />)}
         </datalist>
-        <select name="category" defaultValue={product.category}>
-          {defaultCategories.map((item) => <option key={item}>{item}</option>)}
-        </select>
+        <AdminField label="Category" hint="Product kis category me dikhna chahiye.">
+          <select name="category" defaultValue={product.category}>
+            {defaultCategories.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </AdminField>
         <div className="two-col">
-          <input name="price" type="number" min="0" defaultValue={product.price} placeholder="Selling Price (SP)" required />
-          <input name="mrp" type="number" min="0" defaultValue={product.mrp} placeholder="MRP" required />
+          <AdminField label="Selling price (SP)" hint="Customer ko dikhne wala final selling price.">
+            <input name="price" type="number" min="0" step="0.01" defaultValue={product.price} placeholder="Selling Price (SP)" required />
+          </AdminField>
+          <AdminField label="MRP" hint="Printed MRP, jisse cut price aur discount dikhega.">
+            <input name="mrp" type="number" min="0" step="0.01" defaultValue={product.mrp} placeholder="MRP" required />
+          </AdminField>
         </div>
         <div className="two-col">
-          <input name="stock" type="number" defaultValue={product.stock} placeholder="Stock" />
-          <input name="warranty" defaultValue={product.warranty} placeholder="Warranty" />
+          <AdminField label="Stock quantity" hint="Customer isse zyada quantity add/order nahi kar payega.">
+            <input name="stock" type="number" min="0" defaultValue={product.stock} placeholder="Stock" />
+          </AdminField>
+          <AdminField label="Warranty" hint="Warranty line, jaise 10 years warranty ya brand warranty.">
+            <input name="warranty" defaultValue={product.warranty} placeholder="Warranty" />
+          </AdminField>
         </div>
-        <textarea name="description" defaultValue={product.description} placeholder="Description" />
-        <input name="image_url" defaultValue={product.image_url} placeholder="Existing image URL" />
-        <textarea name="image_urls" defaultValue={(product.image_urls || []).join("\n")} placeholder="Extra image URLs, one per line" />
-        <input name="image_file" type="file" accept="image/*" capture="environment" />
-        <input name="image_files" type="file" accept="image/*" capture="environment" multiple />
+        <AdminField label="Description" hint="Product details, use, size, material ya important notes likho.">
+          <textarea name="description" defaultValue={product.description} placeholder="Description" />
+        </AdminField>
+        <AdminField label="Existing main image URL" hint="Agar photo pehle se uploaded hai to main image URL yahan paste karo.">
+          <input name="image_url" defaultValue={product.image_url} placeholder="Existing image URL" />
+        </AdminField>
+        <AdminField label="Extra image URLs" hint="Har line me ek extra product photo URL daalo.">
+          <textarea name="image_urls" defaultValue={(product.image_urls || []).join("\n")} placeholder="Extra image URLs, one per line" />
+        </AdminField>
+        <AdminField label="Upload main photo" hint="Phone camera/gallery se main product photo upload karo.">
+          <input name="image_file" type="file" accept="image/*" capture="environment" />
+        </AdminField>
+        <AdminField label="Upload extra photos" hint="Multiple product photos select karke gallery me add karo.">
+          <input name="image_files" type="file" accept="image/*" capture="environment" multiple />
+        </AdminField>
         <label className="check-row"><input name="featured" type="checkbox" defaultChecked={product.featured} /> Featured product</label>
         <button className="primary">{editing ? "Update Product" : "Save Product"}</button>
       </form>
@@ -1687,13 +1799,23 @@ function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGal
     <>
       <div className="section-head"><span className="pill">Showroom</span><h1>Add / Edit Gallery Photo</h1></div>
       <form key={editing?.id || "new-gallery"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveGalleryItem(event.currentTarget); }}>
-        <input name="title" defaultValue={item.title} placeholder="Photo title" required />
-        <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        <AdminField label="Photo title" hint="Gallery me dikhne wala title, jaise Showroom Front ya Tiles Display.">
+          <input name="title" defaultValue={item.title} placeholder="Photo title" required />
+        </AdminField>
+        <AdminField label="Caption" hint="Photo ke bare me chhota description.">
+          <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        </AdminField>
         <div className="two-col">
-          <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
-          <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+          <AdminField label="Sort order" hint="Chhota number pehle dikhega.">
+            <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
+          </AdminField>
+          <AdminField label="Existing image URL" hint="Agar photo pehle se uploaded hai to URL yahan paste karo.">
+            <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+          </AdminField>
         </div>
-        <input name="image_file" type="file" accept="image/*" capture="environment" />
+        <AdminField label="Upload gallery photo" hint="Phone camera/gallery se showroom photo upload karo.">
+          <input name="image_file" type="file" accept="image/*" capture="environment" />
+        </AdminField>
         <button className="primary">{editing ? "Update Photo" : "Save Photo"}</button>
       </form>
       <div className="table-list">
@@ -1717,14 +1839,26 @@ function CertificatesAdmin({ certificates, editing, setEditing, saveCertificate,
     <>
       <div className="section-head"><span className="pill">Certificates</span><h1>Add / Edit Dealership Proof</h1></div>
       <form key={editing?.id || "new-certificate"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveCertificate(event.currentTarget); }}>
-        <input name="title" defaultValue={item.title} placeholder="Certificate title" required />
-        <input name="brand" defaultValue={item.brand} placeholder="Brand / company name" />
-        <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        <AdminField label="Certificate title" hint="Title likho, jaise ESSEL Authorized Dealership.">
+          <input name="title" defaultValue={item.title} placeholder="Certificate title" required />
+        </AdminField>
+        <AdminField label="Brand / company name" hint="Company ka naam, jaise ESSEL, Roff, Birla Pivot.">
+          <input name="brand" defaultValue={item.brand} placeholder="Brand / company name" />
+        </AdminField>
+        <AdminField label="Caption" hint="Certificate ya board ke bare me chhota note.">
+          <textarea name="caption" defaultValue={item.caption} placeholder="Caption" />
+        </AdminField>
         <div className="two-col">
-          <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
-          <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+          <AdminField label="Sort order" hint="Chhota number pehle dikhega.">
+            <input name="position" type="number" defaultValue={item.position} placeholder="Sort order" />
+          </AdminField>
+          <AdminField label="Existing image URL" hint="Agar certificate photo pehle se uploaded hai to URL yahan paste karo.">
+            <input name="image_url" defaultValue={item.image_url} placeholder="Existing image URL" />
+          </AdminField>
         </div>
-        <input name="image_file" type="file" accept="image/*" capture="environment" />
+        <AdminField label="Upload certificate photo" hint="Phone camera/gallery se certificate ya board photo upload karo.">
+          <input name="image_file" type="file" accept="image/*" capture="environment" />
+        </AdminField>
         <button className="primary">{editing ? "Update Certificate" : "Save Certificate"}</button>
       </form>
       <div className="table-list">
@@ -1752,6 +1886,7 @@ function OrdersAdmin({ orders, updateOrder }) {
             <b>{order.order_no}</b>
             <small>{order.customer?.name} / {order.customer?.phone}</small>
             <p>{order.items.map((item) => `${item.name} x ${item.quantity}`).join(", ")}</p>
+            <span className={`status-badge ${statusClass(order.status)}`}>{order.status}</span>
             <select value={order.status} onChange={(event) => updateOrder(order.id, event.target.value)}>
               {orderStatuses.map((item) => <option key={item}>{item}</option>)}
             </select>
@@ -1787,13 +1922,21 @@ function StaffAdmin({ createStaff }) {
     <>
       <div className="section-head"><span className="pill">Owner controls</span><h1>Create Staff / Admin</h1></div>
       <form className="panel-form" onSubmit={(event) => { event.preventDefault(); createStaff(event.currentTarget); }}>
-        <input name="name" placeholder="Name" required />
-        <PhoneInput placeholder="Phone" required />
-        <input name="password" placeholder="Password" required />
-        <select name="role">
-          <option value="staff">Staff</option>
-          <option value="admin">Admin</option>
-        </select>
+        <AdminField label="User name" hint="Staff/admin ka naam likho.">
+          <input name="name" placeholder="Name" required />
+        </AdminField>
+        <AdminField label="Phone number" hint="Sirf 10 digit mobile number. Isi se login hoga.">
+          <PhoneInput placeholder="Phone" required />
+        </AdminField>
+        <AdminField label="Password" hint="Is user ke login ke liye password.">
+          <input name="password" placeholder="Password" required />
+        </AdminField>
+        <AdminField label="Access role" hint="Staff limited access, admin zyada access.">
+          <select name="role">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </AdminField>
         <button className="primary">Create User</button>
       </form>
     </>

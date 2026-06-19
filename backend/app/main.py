@@ -350,13 +350,27 @@ async def add_address(payload: AddressIn, user: dict[str, Any] = Depends(require
 async def create_order(payload: OrderCreateIn, user: dict[str, Any] = Depends(require_roles("customer", "owner", "admin", "staff"))) -> dict[str, Any]:
     if not payload.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
-    subtotal = sum(max(item.price, 0) * item.quantity for item in payload.items)
+    db = get_db()
+    validated_items: list[dict[str, Any]] = []
+    for item in payload.items:
+        product = await db.products.find_one({"_id": oid(item.product_id), "active": {"$ne": False}})
+        if not product:
+            raise HTTPException(status_code=404, detail=f"{item.name} is no longer available")
+        stock = int(product.get("stock") or 0)
+        product_name = product.get("name") or item.name
+        if item.quantity > stock:
+            raise HTTPException(status_code=400, detail=f"Only {stock} in stock for {product_name}")
+        item_doc = item.model_dump()
+        item_doc["name"] = product_name
+        item_doc["price"] = float(product.get("price") or item.price or 0)
+        validated_items.append(item_doc)
+    subtotal = sum(max(item["price"], 0) * item["quantity"] for item in validated_items)
     order_no = f"SK{datetime.now().strftime('%y%m%d%H%M%S')}"
     doc = {
         "order_no": order_no,
         "user_id": str(user["_id"]),
         "customer": {"name": user["name"], "phone": user["phone"]},
-        "items": [item.model_dump() for item in payload.items],
+        "items": validated_items,
         "address": payload.address.model_dump(),
         "payment_method": payload.payment_method,
         "subtotal": subtotal,
@@ -365,7 +379,7 @@ async def create_order(payload: OrderCreateIn, user: dict[str, Any] = Depends(re
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
-    result = await get_db().orders.insert_one(doc)
+    result = await db.orders.insert_one(doc)
     doc["_id"] = result.inserted_id
     whatsapp_text = build_order_whatsapp(doc)
     return {"order": doc_id(doc), "whatsapp_text": whatsapp_text, "whatsapp_number": settings.whatsapp_number}

@@ -44,9 +44,9 @@ class ProductIn(BaseModel):
     name: str
     brand: str = ""
     category: str
-    price: float = 0
-    mrp: float = 0
-    stock: int = 0
+    price: float = Field(default=0, ge=0)
+    mrp: float = Field(default=0, ge=0)
+    stock: int = Field(default=0, ge=0)
     warranty: str = ""
     description: str = ""
     image_url: str = ""
