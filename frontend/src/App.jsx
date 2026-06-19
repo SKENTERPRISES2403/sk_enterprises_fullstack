@@ -351,6 +351,9 @@ function App() {
   const [auth, setAuth] = useLocalStorage("sk_fullstack_auth", null);
   const [notice, setNotice] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -358,6 +361,45 @@ function App() {
 
   useEffect(() => {
     loadCatalog();
+  }, []);
+
+  useEffect(() => {
+    const standaloneQuery = window.matchMedia?.("(display-mode: standalone)");
+    const isStandaloneNow = () => Boolean(standaloneQuery?.matches || window.navigator.standalone);
+    const updateStandaloneState = () => {
+      setIsStandaloneApp(isStandaloneNow());
+    };
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+      if (sessionStorage.getItem("sk_install_prompt_closed") !== "1") {
+        setShowInstallPrompt(true);
+      }
+    };
+    const handleAppInstalled = () => {
+      window.clearTimeout(promptTimer);
+      sessionStorage.setItem("sk_install_prompt_closed", "1");
+      localStorage.removeItem("sk_fullstack_auth");
+      setAuth(null);
+      setInstallPromptEvent(null);
+      setShowInstallPrompt(false);
+      setNotice("App installed. Please login again when you open the app.");
+    };
+    const promptTimer = window.setTimeout(() => {
+      if (!isStandaloneNow() && sessionStorage.getItem("sk_install_prompt_closed") !== "1") {
+        setShowInstallPrompt(true);
+      }
+    }, 3500);
+    updateStandaloneState();
+    standaloneQuery?.addEventListener?.("change", updateStandaloneState);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    return () => {
+      window.clearTimeout(promptTimer);
+      standaloneQuery?.removeEventListener?.("change", updateStandaloneState);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
   }, []);
 
   const t = (key) => copy[lang]?.[key] || copy.en[key] || key;
@@ -482,6 +524,29 @@ function App() {
     setPage("store");
   }
 
+  async function installApp() {
+    if (!installPromptEvent) {
+      setNotice("Chrome menu se Add to Home screen / Install app option use karein.");
+      setShowInstallPrompt(false);
+      return;
+    }
+    installPromptEvent.prompt();
+    const choice = await installPromptEvent.userChoice;
+    setInstallPromptEvent(null);
+    setShowInstallPrompt(false);
+    if (choice?.outcome === "accepted") {
+      sessionStorage.setItem("sk_install_prompt_closed", "1");
+      localStorage.removeItem("sk_fullstack_auth");
+      setAuth(null);
+      setNotice("App install started. App open karte time login dobara karein.");
+    }
+  }
+
+  function closeInstallPrompt() {
+    sessionStorage.setItem("sk_install_prompt_closed", "1");
+    setShowInstallPrompt(false);
+  }
+
   async function handleLead(form) {
     try {
       const payload = Object.fromEntries(new FormData(form));
@@ -534,6 +599,12 @@ function App() {
     <>
       <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={lang} setLang={setLang} t={t} />
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
+      <AppInstallPrompt
+        show={showInstallPrompt && !isStandaloneApp}
+        canInstall={Boolean(installPromptEvent)}
+        onInstall={installApp}
+        onClose={closeInstallPrompt}
+      />
 
       {page === "store" && (
         <StorePage
@@ -652,6 +723,21 @@ function LanguageSelect({ lang, setLang }) {
         <option value="bho">भोजपुरी</option>
       </select>
     </label>
+  );
+}
+
+function AppInstallPrompt({ show, canInstall, onInstall, onClose }) {
+  if (!show) return null;
+  return (
+    <div className="app-install-prompt" role="dialog" aria-label="Install S.K. Enterprises app">
+      <img src="/assets/pwa-icon-192.png" alt="S.K. Enterprises app icon" />
+      <div>
+        <b>Install S.K. Enterprises App</b>
+        <span>Fast catalog, cart aur order status ke liye app home screen par add kar lo.</span>
+      </div>
+      <button className="primary" onClick={onInstall}>{canInstall ? "Install" : "How to Install"}</button>
+      <button className="install-close" onClick={onClose} aria-label="Close install prompt">x</button>
+    </div>
   );
 }
 
@@ -971,6 +1057,30 @@ function PhoneInput({ name = "phone", placeholder = "Phone number", defaultValue
         event.currentTarget.setCustomValidity("Enter exactly 10 digits only.");
       }}
     />
+  );
+}
+
+function PasswordInput({ name = "password", placeholder = "Password", defaultValue = "", ...props }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="password-field">
+      <input
+        {...props}
+        name={name}
+        type={visible ? "text" : "password"}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        autoComplete={props.autoComplete || (name === "password" ? "current-password" : "off")}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((value) => !value)}
+        aria-label={visible ? "Hide password" : "Show password"}
+        title={visible ? "Hide password" : "Show password"}
+      >
+        <span aria-hidden="true">&#128065;</span>
+      </button>
+    </div>
   );
 }
 
@@ -1311,7 +1421,7 @@ export function LoginPage({ auth, logout, onAuth, setPage, initialMode = "login"
       <form className="panel-form auth-form" onSubmit={(event) => { event.preventDefault(); onAuth(mode, event.currentTarget); }}>
         {mode === "register" && <input name="name" placeholder="Full name" required />}
         <PhoneInput placeholder="Phone number" required />
-        <input name="password" type="password" placeholder="Password" required />
+        <PasswordInput placeholder="Password" autoComplete={mode === "register" ? "new-password" : "current-password"} required />
         <button className="primary">{mode === "login" ? "Login" : "Register"}</button>
       </form>
       <button className="text-button auth-switch" onClick={() => setPage(mode === "login" ? "register" : "login")}>
@@ -1929,7 +2039,7 @@ function StaffAdmin({ createStaff }) {
           <PhoneInput placeholder="Phone" required />
         </AdminField>
         <AdminField label="Password" hint="Is user ke login ke liye password.">
-          <input name="password" placeholder="Password" required />
+          <PasswordInput placeholder="Password" autoComplete="new-password" required />
         </AdminField>
         <AdminField label="Access role" hint="Staff limited access, admin zyada access.">
           <select name="role">
