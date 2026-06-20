@@ -9,7 +9,7 @@ Modern Android WebView wrapper for the live S.K. Enterprises website.
 - Backup disabled so uninstall/reinstall requires login again.
 - Release-signed by default with a local keystore in `android_app\keystore`.
 - Custom no-internet screen with Retry is shown if both URLs fail.
-- Launcher icon is simplified for phone home screens; splash logo is optimized.
+- Launcher icon is simplified for phone home screens; splash logo is optimized WebP.
 
 Build locally:
 

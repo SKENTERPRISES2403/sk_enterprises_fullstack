@@ -94,8 +94,14 @@ foreach ($density in $Densities) {
 
 $DrawableDir = Join-Path $ResDir "drawable-nodpi"
 New-Item -ItemType Directory -Force -Path $DrawableDir | Out-Null
-$SplashCrop = New-Object System.Drawing.Rectangle 180, 70, 900, 1080
-Save-CroppedPng -SourceImage $SourceImage -Crop $SplashCrop -OutputPath (Join-Path $DrawableDir "splash_logo.png") -CanvasSize 512 -Padding 0.92
+$SplashWebp = Join-Path $DrawableDir "splash_logo.webp"
+$SplashPng = Join-Path $DrawableDir "splash_logo.png"
+if (Test-Path -LiteralPath $SplashWebp) {
+    Remove-Item -LiteralPath $SplashPng -Force -ErrorAction SilentlyContinue
+} else {
+    $SplashCrop = New-Object System.Drawing.Rectangle 180, 70, 900, 1080
+    Save-CroppedPng -SourceImage $SourceImage -Crop $SplashCrop -OutputPath $SplashPng -CanvasSize 512 -Padding 0.92
+}
 $SourceImage.Dispose()
 
 & $Aapt2 compile --dir $ResDir -o $CompiledZip
