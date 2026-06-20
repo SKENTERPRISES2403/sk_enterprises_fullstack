@@ -1,6 +1,7 @@
 package com.skenterprises.prayagraj;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -9,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,17 +22,26 @@ import android.widget.TextView;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebResourceRequest;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 public class MainActivity extends Activity {
-    private static final String CUSTOM_START_URL = "https://skenterprisesprayagraj.com/?native_app=1#store";
+    private static final int FILE_CHOOSER_REQUEST_CODE = 41;
+    private static final String CUSTOM_START_URL = "https://sk-enterprises-frontend.onrender.com/?native_app=1#store";
     private static final String FALLBACK_START_URL = "https://sk-enterprises-frontend.onrender.com/?native_app=1#store";
     private WebView webView;
     private FrameLayout rootLayout;
     private ImageView splashLogo;
     private View offlineView;
+    private ValueCallback<Uri[]> filePathCallback;
+    private boolean cameraCaptureRequest = false;
     private boolean pageLoaded = false;
     private boolean minimumSplashShown = false;
     private boolean fallbackAttempted = false;
@@ -54,6 +65,8 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setBuiltInZoomControls(false);
@@ -103,6 +116,29 @@ public class MainActivity extends Activity {
                 if (request.isForMainFrame()) {
                     handleMainFrameLoadFailure(request.getUrl());
                 }
+            }
+        });
+
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (filePathCallback != null) {
+                    filePathCallback.onReceiveValue(null);
+                }
+                filePathCallback = callback;
+                cameraCaptureRequest = params.isCaptureEnabled() && acceptsImage(params);
+                Intent chooserIntent;
+                try {
+                    chooserIntent = cameraCaptureRequest
+                            ? new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                            : params.createIntent();
+                    startActivityForResult(chooserIntent, FILE_CHOOSER_REQUEST_CODE);
+                } catch (ActivityNotFoundException ex) {
+                    filePathCallback = null;
+                    cameraCaptureRequest = false;
+                    return false;
+                }
+                return true;
             }
         });
 
@@ -254,6 +290,41 @@ public class MainActivity extends Activity {
         return true;
     }
 
+    private boolean acceptsImage(WebChromeClient.FileChooserParams params) {
+        String[] acceptTypes = params.getAcceptTypes();
+        if (acceptTypes == null || acceptTypes.length == 0) return true;
+        for (String type : acceptTypes) {
+            if (type == null || type.length() == 0 || "*/*".equals(type) || type.startsWith("image/")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Uri saveCameraBitmap(Intent data) {
+        if (data == null || data.getExtras() == null) return null;
+        Object bitmapObject = data.getExtras().get("data");
+        if (!(bitmapObject instanceof Bitmap)) return null;
+
+        File file = new File(getCacheDir(), "sk-camera-" + System.currentTimeMillis() + ".jpg");
+        FileOutputStream stream = null;
+        try {
+            stream = new FileOutputStream(file);
+            ((Bitmap) bitmapObject).compress(Bitmap.CompressFormat.JPEG, 92, stream);
+            stream.flush();
+            return Uri.fromFile(file);
+        } catch (IOException ex) {
+            return null;
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
     @Override
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) {
@@ -264,7 +335,31 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
+            if (filePathCallback != null) {
+                Uri[] results = null;
+                if (resultCode == RESULT_OK) {
+                    Uri cameraUri = cameraCaptureRequest ? saveCameraBitmap(data) : null;
+                    results = cameraUri != null
+                            ? new Uri[]{cameraUri}
+                            : WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                }
+                filePathCallback.onReceiveValue(results);
+                filePathCallback = null;
+            }
+            cameraCaptureRequest = false;
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
     protected void onDestroy() {
+        if (filePathCallback != null) {
+            filePathCallback.onReceiveValue(null);
+            filePathCallback = null;
+        }
         if (webView != null) {
             webView.destroy();
             webView = null;

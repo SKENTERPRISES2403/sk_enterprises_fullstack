@@ -1043,6 +1043,12 @@ function formatRupees(value) {
   return `Rs ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
 }
 
+function getFormFiles(formData, name) {
+  return formData
+    .getAll(name)
+    .filter((file) => file && typeof file === "object" && Number(file.size) > 0);
+}
+
 function statusClass(status) {
   return `status-${String(status || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
 }
@@ -1499,7 +1505,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function saveProduct(form) {
     const fd = new FormData(form);
     let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = fd.get("image_file");
+    const imageFile = getFormFiles(fd, "image_file")[0];
     const imageUrls = String(fd.get("image_urls") || "")
       .split(/\r?\n/)
       .map((item) => item.trim())
@@ -1509,7 +1515,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
       imageUrlValue = upload.image_url;
       imageUrls.unshift(upload.image_url);
     }
-    const galleryFiles = fd.getAll("image_files").filter((file) => file && file.size);
+    const galleryFiles = getFormFiles(fd, "image_files");
     for (const file of galleryFiles) {
       const upload = await api.uploadImage(file, auth.token);
       imageUrls.push(upload.image_url);
@@ -1539,7 +1545,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function saveBrand(form) {
     const fd = new FormData(form);
     let logoUrlValue = fd.get("logo_url") || "";
-    const logoFile = fd.get("logo_file");
+    const logoFile = getFormFiles(fd, "logo_file")[0];
     if (logoFile && logoFile.size) {
       const upload = await api.uploadImage(logoFile, auth.token);
       logoUrlValue = upload.image_url;
@@ -1563,7 +1569,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function saveGalleryItem(form) {
     const fd = new FormData(form);
     let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = fd.get("image_file");
+    const imageFile = getFormFiles(fd, "image_file")[0];
     if (imageFile && imageFile.size) {
       const upload = await api.uploadImage(imageFile, auth.token);
       imageUrlValue = upload.image_url;
@@ -1586,7 +1592,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function saveCertificate(form) {
     const fd = new FormData(form);
     let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = fd.get("image_file");
+    const imageFile = getFormFiles(fd, "image_file")[0];
     if (imageFile && imageFile.size) {
       const upload = await api.uploadImage(imageFile, auth.token);
       imageUrlValue = upload.image_url;
@@ -1738,11 +1744,42 @@ function Dashboard({ stats }) {
 
 function AdminField({ label, hint, children }) {
   return (
-    <label className="form-field">
+    <div className="form-field">
       <span>{label}</span>
       {hint && <small>{hint}</small>}
       {children}
-    </label>
+    </div>
+  );
+}
+
+function PhotoUpload({ name, multiple = false }) {
+  const [selected, setSelected] = useState("");
+  const cameraRef = useRef(null);
+  const galleryRef = useRef(null);
+  const updateSelected = (event, otherInputRef) => {
+    if (otherInputRef.current) otherInputRef.current.value = "";
+    const files = Array.from(event.target.files || []);
+    if (!files.length) {
+      setSelected("");
+      return;
+    }
+    setSelected(files.length === 1 ? files[0].name : `${files.length} photos selected`);
+  };
+
+  return (
+    <div className="photo-upload-picker">
+      <div className="photo-upload-actions">
+        <label className="file-choice">
+          <input ref={cameraRef} name={name} type="file" accept="image/*" capture="environment" onChange={(event) => updateSelected(event, galleryRef)} />
+          <span>Camera</span>
+        </label>
+        <label className="file-choice">
+          <input ref={galleryRef} name={name} type="file" accept="image/*" multiple={multiple} onChange={(event) => updateSelected(event, cameraRef)} />
+          <span>Gallery</span>
+        </label>
+      </div>
+      <small className="selected-file-note">{selected || "No photo selected"}</small>
+    </div>
   );
 }
 
@@ -1770,7 +1807,7 @@ function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canD
           </AdminField>
         </div>
         <AdminField label="Upload logo photo" hint="Phone camera/gallery se brand logo upload karo.">
-          <input name="logo_file" type="file" accept="image/*" capture="environment" />
+          <PhotoUpload name="logo_file" />
         </AdminField>
         <button className="primary">{editing ? "Update Brand" : "Save Brand"}</button>
       </form>
@@ -1835,10 +1872,10 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
           <textarea name="image_urls" defaultValue={(product.image_urls || []).join("\n")} placeholder="Extra image URLs, one per line" />
         </AdminField>
         <AdminField label="Upload main photo" hint="Phone camera/gallery se main product photo upload karo.">
-          <input name="image_file" type="file" accept="image/*" capture="environment" />
+          <PhotoUpload name="image_file" />
         </AdminField>
         <AdminField label="Upload extra photos" hint="Multiple product photos select karke gallery me add karo.">
-          <input name="image_files" type="file" accept="image/*" capture="environment" multiple />
+          <PhotoUpload name="image_files" multiple />
         </AdminField>
         <label className="check-row"><input name="featured" type="checkbox" defaultChecked={product.featured} /> Featured product</label>
         <button className="primary">{editing ? "Update Product" : "Save Product"}</button>
@@ -1879,7 +1916,7 @@ function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGal
           </AdminField>
         </div>
         <AdminField label="Upload gallery photo" hint="Phone camera/gallery se showroom photo upload karo.">
-          <input name="image_file" type="file" accept="image/*" capture="environment" />
+          <PhotoUpload name="image_file" />
         </AdminField>
         <button className="primary">{editing ? "Update Photo" : "Save Photo"}</button>
       </form>
@@ -1922,7 +1959,7 @@ function CertificatesAdmin({ certificates, editing, setEditing, saveCertificate,
           </AdminField>
         </div>
         <AdminField label="Upload certificate photo" hint="Phone camera/gallery se certificate ya board photo upload karo.">
-          <input name="image_file" type="file" accept="image/*" capture="environment" />
+          <PhotoUpload name="image_file" />
         </AdminField>
         <button className="primary">{editing ? "Update Certificate" : "Save Certificate"}</button>
       </form>

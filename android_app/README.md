@@ -4,8 +4,8 @@ Modern Android WebView wrapper for the live S.K. Enterprises website.
 
 - Package: `com.skenterprises.prayagraj`
 - Target SDK: current installed Android SDK, default `36`
-- Primary URL: `https://skenterprisesprayagraj.com/?native_app=1#store`
-- Fallback URL: `https://sk-enterprises-frontend.onrender.com/?native_app=1#store`
+- Primary URL: `https://sk-enterprises-frontend.onrender.com/?native_app=1#store`
+- Custom domain can be restored after `skenterprisesprayagraj.com` DNS is live.
 - Backup disabled so uninstall/reinstall requires login again.
 - Release-signed by default with a local keystore in `android_app\keystore`.
 - Custom no-internet screen with Retry is shown if both URLs fail.
