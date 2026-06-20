@@ -45,6 +45,36 @@ Copy-Item -LiteralPath $AndroidJar -Destination $AndroidCompileJar -Force
 
 Add-Type -AssemblyName System.Drawing
 $LogoPath = Join-Path $RepoRoot "frontend\public\assets\sk-logo.png"
+
+function Save-CroppedPng {
+    param(
+        [System.Drawing.Image]$SourceImage,
+        [System.Drawing.Rectangle]$Crop,
+        [string]$OutputPath,
+        [int]$CanvasSize,
+        [double]$Padding = 0.94
+    )
+
+    $bitmap = New-Object System.Drawing.Bitmap $CanvasSize, $CanvasSize
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphics.Clear([System.Drawing.Color]::White)
+    $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+
+    $scale = [Math]::Min(($CanvasSize * $Padding) / $Crop.Width, ($CanvasSize * $Padding) / $Crop.Height)
+    $drawWidth = [int]($Crop.Width * $scale)
+    $drawHeight = [int]($Crop.Height * $scale)
+    $drawX = [int](($CanvasSize - $drawWidth) / 2)
+    $drawY = [int](($CanvasSize - $drawHeight) / 2)
+    $destination = New-Object System.Drawing.Rectangle $drawX, $drawY, $drawWidth, $drawHeight
+
+    $graphics.DrawImage($SourceImage, $destination, $Crop, [System.Drawing.GraphicsUnit]::Pixel)
+    $bitmap.Save($OutputPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $graphics.Dispose()
+    $bitmap.Dispose()
+}
+
 $Densities = @(
     @{ Name = "mipmap-mdpi"; Size = 48 },
     @{ Name = "mipmap-hdpi"; Size = 72 },
@@ -53,27 +83,20 @@ $Densities = @(
     @{ Name = "mipmap-xxxhdpi"; Size = 192 }
 )
 $SourceImage = [System.Drawing.Image]::FromFile($LogoPath)
+$IconCrop = New-Object System.Drawing.Rectangle 170, 70, 920, 700
 foreach ($density in $Densities) {
     $dir = Join-Path $ResDir $density.Name
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     foreach ($name in @("ic_launcher.png", "ic_launcher_round.png")) {
-        $bitmap = New-Object System.Drawing.Bitmap $density.Size, $density.Size
-        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-        $graphics.Clear([System.Drawing.Color]::White)
-        $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-        $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
-        $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-        $graphics.DrawImage($SourceImage, 0, 0, $density.Size, $density.Size)
-        $bitmap.Save((Join-Path $dir $name), [System.Drawing.Imaging.ImageFormat]::Png)
-        $graphics.Dispose()
-        $bitmap.Dispose()
+        Save-CroppedPng -SourceImage $SourceImage -Crop $IconCrop -OutputPath (Join-Path $dir $name) -CanvasSize $density.Size
     }
 }
-$SourceImage.Dispose()
 
 $DrawableDir = Join-Path $ResDir "drawable-nodpi"
 New-Item -ItemType Directory -Force -Path $DrawableDir | Out-Null
-Copy-Item -LiteralPath $LogoPath -Destination (Join-Path $DrawableDir "splash_logo.png") -Force
+$SplashCrop = New-Object System.Drawing.Rectangle 180, 70, 900, 1080
+Save-CroppedPng -SourceImage $SourceImage -Crop $SplashCrop -OutputPath (Join-Path $DrawableDir "splash_logo.png") -CanvasSize 512 -Padding 0.92
+$SourceImage.Dispose()
 
 & $Aapt2 compile --dir $ResDir -o $CompiledZip
 if ($LASTEXITCODE -ne 0) { throw "aapt2 compile failed" }
@@ -114,27 +137,86 @@ if (Test-Path -LiteralPath $ZipAlign) {
     Copy-Item -LiteralPath $ApkWithDex -Destination $AlignedApk -Force
 }
 
-$DebugDir = Join-Path $ProjectRoot "keystore"
-$DebugKeystore = Join-Path $DebugDir "debug.keystore"
-if (!(Test-Path -LiteralPath $DebugKeystore)) {
-    New-Item -ItemType Directory -Force -Path $DebugDir | Out-Null
-    & $Keytool -genkeypair -v `
-        -storepass android `
-        -keypass android `
-        -keystore $DebugKeystore `
-        -alias androiddebugkey `
-        -keyalg RSA `
-        -keysize 2048 `
-        -validity 10000 `
-        -dname "CN=Android Debug,O=Android,C=US"
-    if ($LASTEXITCODE -ne 0) { throw "debug keystore generation failed" }
+function New-SigningPassword {
+    $chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    $bytes = New-Object byte[] 36
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $rng.GetBytes($bytes)
+    $rng.Dispose()
+    return -join ($bytes | ForEach-Object { $chars[[int]$_ % $chars.Length] })
 }
 
+$SigningDir = Join-Path $ProjectRoot "keystore"
+New-Item -ItemType Directory -Force -Path $SigningDir | Out-Null
+
+if ($Configuration.ToLowerInvariant() -eq "debug") {
+    $SigningKeystore = Join-Path $SigningDir "debug.keystore"
+    $SigningAlias = "androiddebugkey"
+    $SigningStorePass = "android"
+    $SigningKeyPass = "android"
+
+    if (!(Test-Path -LiteralPath $SigningKeystore)) {
+        & $Keytool -genkeypair -v `
+            -storepass $SigningStorePass `
+            -keypass $SigningKeyPass `
+            -keystore $SigningKeystore `
+            -alias $SigningAlias `
+            -keyalg RSA `
+            -keysize 2048 `
+            -validity 10000 `
+            -dname "CN=Android Debug,O=Android,C=US"
+        if ($LASTEXITCODE -ne 0) { throw "debug keystore generation failed" }
+    }
+} else {
+    $SigningPropertiesFile = Join-Path $SigningDir "release-signing.properties"
+    if (!(Test-Path -LiteralPath $SigningPropertiesFile)) {
+        $generatedPassword = New-SigningPassword
+        @(
+            "storeFile=sk-enterprises-release.jks",
+            "storePassword=$generatedPassword",
+            "keyAlias=skenterprisesrelease",
+            "keyPassword=$generatedPassword"
+        ) | Set-Content -LiteralPath $SigningPropertiesFile -Encoding ASCII
+    }
+
+    $SigningProperties = ConvertFrom-StringData (Get-Content -LiteralPath $SigningPropertiesFile -Raw)
+    $SigningStoreFile = $SigningProperties.storeFile
+    if ([string]::IsNullOrWhiteSpace($SigningStoreFile)) { $SigningStoreFile = "sk-enterprises-release.jks" }
+    if ([System.IO.Path]::IsPathRooted($SigningStoreFile)) {
+        $SigningKeystore = $SigningStoreFile
+    } else {
+        $SigningKeystore = Join-Path $SigningDir $SigningStoreFile
+    }
+    $SigningAlias = $SigningProperties.keyAlias
+    $SigningStorePass = $SigningProperties.storePassword
+    $SigningKeyPass = $SigningProperties.keyPassword
+
+    if ([string]::IsNullOrWhiteSpace($SigningAlias) -or [string]::IsNullOrWhiteSpace($SigningStorePass) -or [string]::IsNullOrWhiteSpace($SigningKeyPass)) {
+        throw "Release signing properties are incomplete: $SigningPropertiesFile"
+    }
+
+    if (!(Test-Path -LiteralPath $SigningKeystore)) {
+        & $Keytool -genkeypair -v `
+            -storetype PKCS12 `
+            -storepass $SigningStorePass `
+            -keypass $SigningKeyPass `
+            -keystore $SigningKeystore `
+            -alias $SigningAlias `
+            -keyalg RSA `
+            -keysize 2048 `
+            -validity 10000 `
+            -dname "CN=S.K. Enterprises,OU=Mobile,O=S.K. Enterprises,L=Prayagraj,ST=Uttar Pradesh,C=IN"
+        if ($LASTEXITCODE -ne 0) { throw "release keystore generation failed" }
+    }
+}
+
+Write-Host "Signing APK with $Configuration keystore: $SigningKeystore"
+
 & $ApkSigner sign `
-    --ks $DebugKeystore `
-    --ks-key-alias androiddebugkey `
-    --ks-pass pass:android `
-    --key-pass pass:android `
+    --ks $SigningKeystore `
+    --ks-key-alias $SigningAlias `
+    --ks-pass "pass:$SigningStorePass" `
+    --key-pass "pass:$SigningKeyPass" `
     --out $FinalApk `
     $AlignedApk
 if ($LASTEXITCODE -ne 0) { throw "apksigner failed" }
