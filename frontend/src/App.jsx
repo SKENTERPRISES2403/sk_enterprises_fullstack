@@ -57,6 +57,7 @@ const emptyBrandItem = {
   active: true,
 };
 
+const androidPackageName = "com.skenterprises.prayagraj";
 const nativeApkUrl = "/downloads/SK-Enterprises.apk";
 
 let statsCountersPlayed = false;
@@ -2018,12 +2019,17 @@ function FloatingLinks() {
 }
 
 function MobileInstallPrompt({ onClose }) {
+  const openAppUrl = getNativeOpenUrl();
+
   return (
-    <div className="mobile-install-prompt" role="region" aria-label="Install S.K. Enterprises app">
+    <div className="mobile-install-prompt" role="region" aria-label="Open S.K. Enterprises Android app">
       <img src="/assets/sk-logo.png" alt="" aria-hidden="true" />
-      <b>S.K. Enterprises</b>
-      <a className="install-button" href={nativeApkUrl} download>
-        Install App
+      <div className="install-copy">
+        <b>S.K. Enterprises</b>
+        <span>Android App</span>
+      </div>
+      <a className="install-button" href={openAppUrl}>
+        Open App
       </a>
       <button className="install-close" type="button" onClick={onClose} aria-label="Close install option">
         x
@@ -2105,9 +2111,15 @@ function shouldShowMobileInstallPrompt() {
   const params = new URLSearchParams(window.location.search);
   const isNativeApp = params.get("native_app") === "1" || navigator.userAgent.includes("SKEnterprisesApp");
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-  const isMobile = window.matchMedia("(max-width: 820px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isMobileSize = window.matchMedia("(max-width: 820px)").matches;
   const dismissed = sessionStorage.getItem("sk_install_prompt_closed") === "1";
-  return isMobile && !isNativeApp && !isStandalone && !dismissed;
+  return isAndroid && isMobileSize && !isNativeApp && !isStandalone && !dismissed;
+}
+
+function getNativeOpenUrl() {
+  const fallbackUrl = `${window.location.origin}${nativeApkUrl}`;
+  return `intent://open#Intent;scheme=skenterprises;package=${androidPackageName};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
 }
 
 export default App;

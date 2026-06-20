@@ -1611,10 +1611,10 @@ textarea {
   left: 12px;
   z-index: 60;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto 34px;
+  grid-template-columns: 48px minmax(0, 1fr) auto 34px;
   gap: 10px;
   align-items: center;
-  min-height: 66px;
+  min-height: 70px;
   padding: 10px;
   color: var(--navy);
   background: rgba(255, 255, 255, 0.96);
@@ -1626,18 +1626,33 @@ textarea {
 }
 
 .mobile-install-prompt img {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   object-fit: contain;
   background: var(--white);
   border: 2px solid rgba(244, 123, 32, 0.25);
   border-radius: 8px;
 }
 
-.mobile-install-prompt b {
+.install-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.install-copy b {
   overflow: hidden;
   font-size: 15px;
   font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.install-copy span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
