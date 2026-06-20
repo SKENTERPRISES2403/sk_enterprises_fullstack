@@ -57,6 +57,8 @@ const emptyBrandItem = {
   active: true,
 };
 
+const nativeApkUrl = "/downloads/SK-Enterprises.apk";
+
 let statsCountersPlayed = false;
 
 const featureCardsByLang = {
@@ -351,10 +353,27 @@ function App() {
   const [auth, setAuth] = useLocalStorage("sk_fullstack_auth", null);
   const [notice, setNotice] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
+
+  useEffect(() => {
+    const updateInstallPrompt = () => setShowInstallPrompt(shouldShowMobileInstallPrompt());
+    updateInstallPrompt();
+    window.addEventListener("resize", updateInstallPrompt);
+    window.addEventListener("orientationchange", updateInstallPrompt);
+    return () => {
+      window.removeEventListener("resize", updateInstallPrompt);
+      window.removeEventListener("orientationchange", updateInstallPrompt);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("has-install-prompt", showInstallPrompt);
+    return () => document.body.classList.remove("has-install-prompt");
+  }, [showInstallPrompt]);
 
   useEffect(() => {
     loadCatalog();
@@ -530,6 +549,11 @@ function App() {
     }
   }
 
+  function closeInstallPrompt() {
+    sessionStorage.setItem("sk_install_prompt_closed", "1");
+    setShowInstallPrompt(false);
+  }
+
   return (
     <>
       <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={lang} setLang={setLang} t={t} />
@@ -593,6 +617,7 @@ function App() {
         <AdminPanel auth={auth} setPage={setPage} reloadCatalog={loadCatalog} />
       )}
 
+      {showInstallPrompt && <MobileInstallPrompt onClose={closeInstallPrompt} />}
       <FloatingLinks />
       <Footer setPage={setPage} />
     </>
@@ -1992,6 +2017,21 @@ function FloatingLinks() {
   );
 }
 
+function MobileInstallPrompt({ onClose }) {
+  return (
+    <div className="mobile-install-prompt" role="region" aria-label="Install S.K. Enterprises app">
+      <img src="/assets/sk-logo.png" alt="" aria-hidden="true" />
+      <b>S.K. Enterprises</b>
+      <a className="install-button" href={nativeApkUrl} download>
+        Install App
+      </a>
+      <button className="install-close" type="button" onClick={onClose} aria-label="Close install option">
+        x
+      </button>
+    </div>
+  );
+}
+
 function Footer({ setPage }) {
   const jumpTo = (id) => {
     setPage("store");
@@ -2059,6 +2099,15 @@ function useLocalStorage(key, initialValue) {
     localStorage.setItem(key, JSON.stringify(value));
   }, [key, value]);
   return [value, setValue];
+}
+
+function shouldShowMobileInstallPrompt() {
+  const params = new URLSearchParams(window.location.search);
+  const isNativeApp = params.get("native_app") === "1" || navigator.userAgent.includes("SKEnterprisesApp");
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  const isMobile = window.matchMedia("(max-width: 820px)").matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const dismissed = sessionStorage.getItem("sk_install_prompt_closed") === "1";
+  return isMobile && !isNativeApp && !isStandalone && !dismissed;
 }
 
 export default App;
