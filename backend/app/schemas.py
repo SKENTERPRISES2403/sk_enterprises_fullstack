@@ -43,6 +43,7 @@ class StaffCreateIn(RegisterIn):
 class ProductIn(BaseModel):
     name: str
     brand: str = ""
+    series: str = ""
     category: str
     price: float = Field(default=0, ge=0)
     mrp: float = Field(default=0, ge=0)

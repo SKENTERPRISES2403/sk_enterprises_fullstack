@@ -71,6 +71,7 @@ def doc_id(doc: dict[str, Any]) -> dict[str, Any]:
 
 def clean_product(product: dict[str, Any]) -> dict[str, Any]:
     product.setdefault("image_urls", [])
+    product.setdefault("series", "")
     return doc_id(product)
 
 
@@ -279,6 +280,7 @@ async def products(
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
             {"brand": {"$regex": search, "$options": "i"}},
+            {"series": {"$regex": search, "$options": "i"}},
             {"category": {"$regex": search, "$options": "i"}},
             {"warranty": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}},

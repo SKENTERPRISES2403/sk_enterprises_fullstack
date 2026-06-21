@@ -19,6 +19,7 @@ PRODUCTS = [
     {
         "name": "ESSEL CP Fittings Set",
         "brand": "ESSEL",
+        "series": "Ehit Series",
         "category": "CP Fittings",
         "price": 2499,
         "mrp": 3499,
@@ -31,6 +32,7 @@ PRODUCTS = [
     {
         "name": "Matte Black Tap Collection",
         "brand": "TOYO / ESSEL",
+        "series": "Enzo Series",
         "category": "CP Fittings",
         "price": 1899,
         "mrp": 2599,
@@ -43,6 +45,7 @@ PRODUCTS = [
     {
         "name": "FlowKem PTMT Taps",
         "brand": "FlowKem",
+        "series": "PTMT Range",
         "category": "CP Fittings",
         "price": 299,
         "mrp": 449,
@@ -55,6 +58,7 @@ PRODUCTS = [
     {
         "name": "Birla Pivot Western Toilet",
         "brand": "Birla Pivot",
+        "series": "Trendy Series",
         "category": "Sanitaryware",
         "price": 7490,
         "mrp": 9490,

@@ -730,6 +730,34 @@ textarea {
   font-weight: 900;
 }
 
+.series-tabs {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: -2px 0 18px;
+  padding: 12px;
+  background: #f8fbff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.series-tabs button {
+  min-height: 38px;
+  padding: 8px 12px;
+  color: var(--navy);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.series-tabs button.active {
+  color: var(--white);
+  background: var(--orange);
+  border-color: var(--orange);
+}
+
 .catalog-loading {
   margin: 10px 0 16px;
   padding: 11px 14px;
@@ -819,6 +847,21 @@ textarea {
 .product-body p {
   margin: 0 0 8px;
   color: var(--muted);
+}
+
+.series-pill {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 24px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  color: #8b3508;
+  background: #fff3e8;
+  border: 1px solid #ffc99f;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 950;
 }
 
 .product-body b {
@@ -1650,93 +1693,6 @@ textarea {
 
 .float-links .map {
   background: #ea4335;
-}
-
-.has-install-prompt .float-links {
-  bottom: 96px;
-}
-
-.mobile-install-prompt {
-  position: fixed;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
-  z-index: 60;
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) auto 34px;
-  gap: 10px;
-  align-items: center;
-  min-height: 70px;
-  padding: 10px;
-  color: var(--navy);
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(10, 37, 64, 0.14);
-  border-bottom: 3px solid var(--orange);
-  border-radius: 8px;
-  box-shadow: 0 18px 40px rgba(10, 37, 64, 0.28);
-  backdrop-filter: blur(14px);
-}
-
-.mobile-install-prompt img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  background: var(--white);
-  border: 2px solid rgba(244, 123, 32, 0.25);
-  border-radius: 8px;
-}
-
-.install-copy {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.install-copy b {
-  overflow: hidden;
-  font-size: 15px;
-  font-weight: 950;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.install-copy span {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.install-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 9px 13px;
-  color: var(--white);
-  background: var(--orange);
-  border-radius: 8px;
-  box-shadow: 0 8px 18px rgba(244, 123, 32, 0.26);
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 950;
-  white-space: nowrap;
-}
-
-.install-close {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  padding: 0;
-  color: var(--navy);
-  background: #eef3f8;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 950;
 }
 
 .site-footer {

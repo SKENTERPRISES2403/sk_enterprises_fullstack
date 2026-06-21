@@ -20,6 +20,7 @@ import {
 const emptyProduct = {
   name: "",
   brand: "",
+  series: "",
   category: "CP Fittings",
   price: 0,
   mrp: 0,
@@ -57,9 +58,6 @@ const emptyBrandItem = {
   active: true,
 };
 
-const androidPackageName = "com.skenterprises.prayagraj";
-const nativeApkUrl = "/downloads/SK-Enterprises.apk";
-
 let statsCountersPlayed = false;
 
 const featureCardsByLang = {
@@ -78,14 +76,6 @@ const featureCardsByLang = {
     ["🧾", "GST बिलिंग", "साफ रेट और proper GST invoice के साथ बिलिंग।"],
     ["🏗️", "कॉन्ट्रैक्टर सपोर्ट", "बिल्डर और प्लंबर के लिए priority processing।"],
     ["✅", "अधिकृत डीलर", "टॉप ब्रांड की official dealership और warranty support।"],
-  ],
-  bho: [
-    ["📜", "असली सामान", "100% ओरिजिनल कंपनी सप्लाई वाला सामान।"],
-    ["💰", "थोक भाव", "रिटेल आ बल्क ऑर्डर खातिर बढ़िया बाजार भाव।"],
-    ["🚚", "जल्दी डिलीवरी", "साइट तक सामान जल्दी आ भरोसेमंद तरीका से पहुंचावल जाला।"],
-    ["🧾", "GST बिलिंग", "साफ रेट आ proper GST invoice के साथ बिलिंग।"],
-    ["🏗️", "ठेकेदार सपोर्ट", "बिल्डर आ प्लंबर लोग खातिर priority processing।"],
-    ["✅", "अधिकृत डीलर", "टॉप ब्रांड के official dealership आ warranty support।"],
   ],
 };
 
@@ -116,20 +106,6 @@ const reviewsByLang = {
     {
       name: "Ramesh Gupta",
       text: "Builder work के लिए Supreme pipes और bath fittings चाहिए थे। Bulk quantity पर अच्छा price मिला और GST bill proper मिला।",
-    },
-  ],
-  bho: [
-    {
-      name: "Dheeraj Pandey",
-      text: "दुकानदार के व्यवहार बहुत नीमन बा। ESSEL fittings सही रेट पर मिलल आ warranty card के साथ पूरा जानकारी भी मिलल।",
-    },
-    {
-      name: "Vivek Mishra",
-      text: "घर के bathroom खातिर tiles, sanitary आ Roff material इहे दुकान से लिहनी। रेट साफ रहे आ delivery समय पर भइल।",
-    },
-    {
-      name: "Ramesh Gupta",
-      text: "Builder work खातिर Supreme pipes आ bath fittings चाहीं रहे। Bulk quantity पर बढ़िया price मिलल आ GST bill proper मिलल।",
     },
   ],
 };
@@ -269,73 +245,6 @@ const copy = {
     checkout: "Checkout",
     emptyCart: "कार्ट खाली है। पहले प्रोडक्ट जोड़ें।",
   },
-  bho: {
-    navProducts: "प्रोडक्ट",
-    navGallery: "गैलरी",
-    navWhy: "काहे हम",
-    navContact: "संपर्क",
-    shop: "शॉप",
-    orders: "ऑर्डर",
-    admin: "एडमिन",
-    login: "लॉगिन",
-    register: "रजिस्टर",
-    cart: "कार्ट",
-    heroKicker: "प्रयागराज में GST रजिस्टर्ड अधिकृत डीलर",
-    heroTitle: "S.K. Enterprises",
-    heroSub: "हार्डवेयर, CP फिटिंग, सेनेटरी, टाइल्स, टैंक, पाइप आ कंस्ट्रक्शन केमिकल्स खातिर भरोसेमंद दुकान।",
-    quote: "लिस्ट भेजीं",
-    browse: "प्रोडक्ट देखीं",
-    trust1: "GST रजिस्टर्ड",
-    trust2: "अधिकृत डीलर",
-    trust3: "साइट डिलीवरी बा",
-    trust4: "थोक ऑर्डर लेवल जाला",
-    stat1: "साल के अनुभव",
-    stat2: "खुश ग्राहक",
-    stat3: "ठेकेदार नेटवर्क",
-    stat4: "ऑफलाइन पेमेंट",
-    featured: "फीचर्ड प्रोडक्ट",
-    featuredSub: "घर, प्रोजेक्ट आ ठेकेदार खातिर जरूरी सामान।",
-    catalog: "प्रोडक्ट कैटलॉग",
-    search: "प्रोडक्ट, ब्रांड, कैटेगरी खोजीं...",
-    whyTitle: "Why S.K. Enterprises?",
-    whySub: "हमनी के भरोसा खाली सामान बेचे में ना, रिश्ता बनावे में बा।",
-    feature1Title: "Genuine Products",
-    feature1Text: "100% original company supplied products.",
-    feature2Title: "Wholesale Pricing",
-    feature2Text: "Best market price for retail and bulk orders.",
-    feature3Title: "Fast Delivery",
-    feature3Text: "Quick material delivery directly to your site.",
-    feature4Title: "GST Billing",
-    feature4Text: "Transparent pricing with proper GST invoices.",
-    feature5Title: "Contractor Support",
-    feature5Text: "Special priority processing for builders and plumbers.",
-    feature6Title: "Authorized Dealer",
-    feature6Text: "Official dealer for top brands ensuring full warranty.",
-    dealership: "डीलरशिप आ ब्रांड प्रूफ",
-    dealershipSub: "शोरूम के असली बोर्ड, सर्टिफिकेट आ स्टॉक फोटो।",
-    gallery: "शोरूम गैलरी",
-    gallerySub: "शोरूम, डिस्प्ले आ प्रोडक्ट रेंज के झलक।",
-    reviews: "ग्राहकन के राय",
-    reviewsSub: "लोकल ग्राहक आ साइट खरीदारन के भरोसेमंद बात।",
-    contactTitle: "दुकान आईं या जरूरत भेजीं",
-    contactSub: "Call, WhatsApp या location direct खोल सकत बानी। Quick inquiry भी भेजीं।",
-    address: "कनिहार रोड, सराय तकी, प्रयागराज, उत्तर प्रदेश 211019",
-    plusCode: "Plus Code: CW9J+CF Prayagraj",
-    formTitle: "फ्री कोटेशन लीं",
-    formName: "पूरा नाम",
-    formPhone: "फोन नंबर",
-    formCategory: "कैटेगरी",
-    formMessage: "जरूरत / साइट डिटेल",
-    formButton: "Inquiry भेजीं",
-    askQuote: "रेट पूछीं",
-    details: "डिटेल",
-    add: "Add",
-    addCart: "कार्ट में जोड़ीं",
-    all: "All",
-    finalRate: "Final rate WhatsApp / store पर",
-    checkout: "Checkout",
-    emptyCart: "कार्ट खाली बा। पहिले प्रोडक्ट जोड़ीं।",
-  },
 };
 
 function App() {
@@ -348,39 +257,25 @@ function App() {
   const [categories, setCategories] = useState(defaultCategories);
   const [query, setQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedSeries, setSelectedSeries] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
   const [cart, setCart] = useLocalStorage("sk_fullstack_cart", []);
   const [auth, setAuth] = useLocalStorage("sk_fullstack_auth", null);
   const [notice, setNotice] = useState("");
   const [catalogLoading, setCatalogLoading] = useState(true);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const activeLang = lang === "hi" ? "hi" : "en";
 
   useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
-
-  useEffect(() => {
-    const updateInstallPrompt = () => setShowInstallPrompt(shouldShowMobileInstallPrompt());
-    updateInstallPrompt();
-    window.addEventListener("resize", updateInstallPrompt);
-    window.addEventListener("orientationchange", updateInstallPrompt);
-    return () => {
-      window.removeEventListener("resize", updateInstallPrompt);
-      window.removeEventListener("orientationchange", updateInstallPrompt);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle("has-install-prompt", showInstallPrompt);
-    return () => document.body.classList.remove("has-install-prompt");
-  }, [showInstallPrompt]);
+    if (lang !== activeLang) setLang(activeLang);
+    document.documentElement.lang = activeLang;
+  }, [activeLang, lang, setLang]);
 
   useEffect(() => {
     loadCatalog();
   }, []);
 
-  const t = (key) => copy[lang]?.[key] || copy.en[key] || key;
+  const t = (key) => copy[activeLang]?.[key] || copy.en[key] || key;
 
   async function loadCatalog() {
     setCatalogLoading(true);
@@ -413,14 +308,33 @@ function App() {
     const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return products.filter((product) => {
       const matchesCategory = category === "All" || product.category === category;
-      const searchable = `${product.name} ${product.brand} ${product.category} ${product.warranty} ${product.description}`.toLowerCase();
+      const searchable = `${product.name} ${product.brand} ${product.series} ${product.category} ${product.warranty} ${product.description}`.toLowerCase();
       const matchesSearch = !terms.length || terms.every((term) => searchable.includes(term));
       const brandName = selectedBrand.toLowerCase();
       const brandKey = brandName.split(" ")[0];
       const matchesBrand = !selectedBrand || searchable.includes(brandName) || searchable.includes(brandKey);
-      return matchesCategory && matchesSearch && matchesBrand;
+      const matchesSeries = !selectedSeries || String(product.series || "").trim() === selectedSeries;
+      return matchesCategory && matchesSearch && matchesBrand && matchesSeries;
     });
-  }, [products, category, query, selectedBrand]);
+  }, [products, category, query, selectedBrand, selectedSeries]);
+
+  const seriesOptions = useMemo(() => {
+    if (!selectedBrand) return [];
+    const brandName = selectedBrand.toLowerCase();
+    const brandKey = brandName.split(" ")[0];
+    const values = products
+      .filter((product) => {
+        const searchable = `${product.name} ${product.brand} ${product.series} ${product.category}`.toLowerCase();
+        return searchable.includes(brandName) || searchable.includes(brandKey);
+      })
+      .map((product) => String(product.series || "").trim())
+      .filter(Boolean);
+    return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+  }, [products, selectedBrand]);
+
+  useEffect(() => {
+    if (selectedSeries && !seriesOptions.includes(selectedSeries)) setSelectedSeries("");
+  }, [selectedSeries, seriesOptions]);
 
   const featured = products.filter((product) => product.featured).slice(0, 4);
   const cartQty = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -550,20 +464,15 @@ function App() {
     }
   }
 
-  function closeInstallPrompt() {
-    sessionStorage.setItem("sk_install_prompt_closed", "1");
-    setShowInstallPrompt(false);
-  }
-
   return (
     <>
-      <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={lang} setLang={setLang} t={t} />
+      <Header auth={auth} cartQty={cartQty} setPage={setPage} lang={activeLang} setLang={setLang} t={t} />
       {notice && <div className="notice" onClick={() => setNotice("")}>{notice}</div>}
 
       {page === "store" && (
         <StorePage
           t={t}
-          lang={lang}
+          lang={activeLang}
           featured={featured}
           products={visibleProducts}
           brands={brands}
@@ -574,6 +483,9 @@ function App() {
           setQuery={setQuery}
           selectedBrand={selectedBrand}
           setSelectedBrand={setSelectedBrand}
+          selectedSeries={selectedSeries}
+          setSelectedSeries={setSelectedSeries}
+          seriesOptions={seriesOptions}
           category={category}
           setCategory={setCategory}
           cart={cart}
@@ -618,7 +530,6 @@ function App() {
         <AdminPanel auth={auth} setPage={setPage} reloadCatalog={loadCatalog} />
       )}
 
-      {showInstallPrompt && <MobileInstallPrompt onClose={closeInstallPrompt} />}
       <FloatingLinks />
       <Footer setPage={setPage} />
     </>
@@ -649,9 +560,9 @@ function Header({ auth, cartQty, setPage, lang, setLang, t }) {
       <div className="header-actions">
         <LanguageSelect lang={lang} setLang={setLang} />
         <div className="lang-switch" aria-label="Language">
-          {["en", "hi", "bho"].map((item) => (
+          {["en", "hi"].map((item) => (
             <button key={item} className={lang === item ? "active" : ""} onClick={() => setLang(item)}>
-              {item === "en" ? "EN" : item === "hi" ? "हिं" : "भोज"}
+              {item === "en" ? "EN" : "हिं"}
             </button>
           ))}
         </div>
@@ -675,7 +586,6 @@ function LanguageSelect({ lang, setLang }) {
       <select value={lang} onChange={(event) => setLang(event.target.value)}>
         <option value="en">EN English</option>
         <option value="hi">हिंदी</option>
-        <option value="bho">भोजपुरी</option>
       </select>
     </label>
   );
@@ -694,6 +604,9 @@ export function StorePage({
   setQuery,
   selectedBrand,
   setSelectedBrand,
+  selectedSeries,
+  setSelectedSeries,
+  seriesOptions,
   category,
   setCategory,
   cart,
@@ -703,7 +616,7 @@ export function StorePage({
   submitLead,
   openDetail,
 }) {
-  const activeProductFilter = Boolean(selectedBrand || query.trim() || category !== "All");
+  const activeProductFilter = Boolean(selectedBrand || selectedSeries || query.trim() || category !== "All");
   const cartByProductId = useMemo(
     () => new Map((cart || []).map((item) => [item.product_id, Number(item.quantity || 0)])),
     [cart]
@@ -713,6 +626,7 @@ export function StorePage({
   };
   const clearFilters = () => {
     setSelectedBrand("");
+    setSelectedSeries("");
     setQuery("");
     setCategory("All");
   };
@@ -720,8 +634,22 @@ export function StorePage({
     <>
       {activeProductFilter && (
         <div className="filter-strip">
-          <b>{selectedBrand ? `${selectedBrand} products` : query.trim() ? "Search results" : `${category} products`}</b>
+          <b>{selectedSeries ? `${selectedBrand} - ${selectedSeries}` : selectedBrand ? `${selectedBrand} products` : query.trim() ? "Search results" : `${category} products`}</b>
           <button onClick={clearFilters}>Clear</button>
+        </div>
+      )}
+      {selectedBrand && seriesOptions.length > 0 && (
+        <div className="series-tabs" aria-label={`${selectedBrand} series`}>
+          <button className={!selectedSeries ? "active" : ""} onClick={() => setSelectedSeries("")}>All Series</button>
+          {seriesOptions.map((series) => (
+            <button
+              key={series}
+              className={selectedSeries === series ? "active" : ""}
+              onClick={() => setSelectedSeries(series)}
+            >
+              {series}
+            </button>
+          ))}
         </div>
       )}
       {catalogLoading && <div className="catalog-loading">Loading latest stock and prices...</div>}
@@ -767,9 +695,9 @@ export function StorePage({
 
       <section className="section" id="products">
         <SectionHead title={t("catalog")} sub={t("featuredSub")} />
-        <form className="toolbar search-toolbar" onSubmit={(event) => { event.preventDefault(); setSelectedBrand(""); jumpToProductResults(); }}>
+        <form className="toolbar search-toolbar" onSubmit={(event) => { event.preventDefault(); setSelectedBrand(""); setSelectedSeries(""); jumpToProductResults(); }}>
           <div className="search-box">
-            <input value={query} onChange={(event) => { setQuery(event.target.value); setSelectedBrand(""); }} placeholder={t("search")} />
+            <input value={query} onChange={(event) => { setQuery(event.target.value); setSelectedBrand(""); setSelectedSeries(""); }} placeholder={t("search")} />
             <button type="submit" aria-label="Search">🔍</button>
           </div>
           <select
@@ -777,6 +705,7 @@ export function StorePage({
             onChange={(event) => {
               setCategory(event.target.value);
               setSelectedBrand("");
+              setSelectedSeries("");
               if (event.target.value !== "All") jumpToProductResults();
             }}
           >
@@ -792,6 +721,7 @@ export function StorePage({
               onClick={() => {
                 setCategory(item);
                 setSelectedBrand("");
+                setSelectedSeries("");
                 if (item !== "All") jumpToProductResults();
               }}
             >
@@ -805,6 +735,7 @@ export function StorePage({
           selectedBrand={selectedBrand}
           onSelect={(brand) => {
             setSelectedBrand(brand.name);
+            setSelectedSeries("");
             setQuery("");
             setCategory("All");
             jumpToProductResults();
@@ -1092,6 +1023,7 @@ function ProductCard({ product, cartQuantity, addToCart, updateQty, openDetail, 
         <small>{product.category}</small>
         <h3>{product.name}</h3>
         <p>{product.brand}</p>
+        {product.series && <span className="series-pill">{product.series}</span>}
         <PriceBlock product={product} t={t} />
       </div>
       <div className="card-actions">
@@ -1249,6 +1181,7 @@ export function ProductDetail({ product, addToCart, back, t = (key) => copy.en[k
         <PriceBlock product={product} t={t} large />
         <dl>
           <div><dt>Brand</dt><dd>{product.brand || "-"}</dd></div>
+          <div><dt>Series</dt><dd>{product.series || "-"}</dd></div>
           <div><dt>SP</dt><dd>{product.price ? formatRupees(product.price) : t("finalRate")}</dd></div>
           <div><dt>MRP</dt><dd>{product.mrp ? formatRupees(product.mrp) : "-"}</dd></div>
           <div><dt>Stock</dt><dd>{product.stock}</dd></div>
@@ -1523,6 +1456,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     const payload = {
       name: fd.get("name"),
       brand: fd.get("brand"),
+      series: String(fd.get("series") || "").trim(),
       category: fd.get("category"),
       price: Number(fd.get("price") || 0),
       mrp: Number(fd.get("mrp") || 0),
@@ -1838,6 +1772,9 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
         <AdminField label="Brand name" hint="Brand select/type karo, jaise ESSEL, FlowKem, Supreme.">
           <input name="brand" list="brand-options" defaultValue={product.brand} placeholder="Brand" />
         </AdminField>
+        <AdminField label="Series name (optional)" hint="Agar product kisi company series me hai to likho, jaise Endy, Ehit, Enzo, Erna, Trendy, Orbit. Blank chhodne par series nahi dikhegi.">
+          <input name="series" defaultValue={product.series || ""} placeholder="Series name (optional)" />
+        </AdminField>
         <datalist id="brand-options">
           {brands.map((item) => <option key={item.id || item.name} value={item.name} />)}
         </datalist>
@@ -1884,7 +1821,7 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
         {products.map((item) => (
           <article className="admin-row" key={item.id}>
             <img src={imageUrl(item.image_url)} alt={item.name} />
-            <div><b>{item.name}</b><small>{item.category} / {item.brand}</small></div>
+            <div><b>{item.name}</b><small>{item.category} / {item.brand}{item.series ? ` / ${item.series}` : ""}</small></div>
             <span>{item.price ? `${formatRupees(item.price)} SP / Stock ${item.stock}` : `Quote / Stock ${item.stock}`}</span>
             <button onClick={() => setEditing(item)}>Edit</button>
             {canDelete && <button className="danger" onClick={() => deleteProduct(item.id)}>Delete</button>}
@@ -2055,26 +1992,6 @@ function FloatingLinks() {
   );
 }
 
-function MobileInstallPrompt({ onClose }) {
-  const openAppUrl = getNativeOpenUrl();
-
-  return (
-    <div className="mobile-install-prompt" role="region" aria-label="Open S.K. Enterprises Android app">
-      <img src="/assets/sk-logo.png" alt="" aria-hidden="true" />
-      <div className="install-copy">
-        <b>S.K. Enterprises</b>
-        <span>Android App</span>
-      </div>
-      <a className="install-button" href={openAppUrl}>
-        Open App
-      </a>
-      <button className="install-close" type="button" onClick={onClose} aria-label="Close install option">
-        x
-      </button>
-    </div>
-  );
-}
-
 function Footer({ setPage }) {
   const jumpTo = (id) => {
     setPage("store");
@@ -2142,21 +2059,6 @@ function useLocalStorage(key, initialValue) {
     localStorage.setItem(key, JSON.stringify(value));
   }, [key, value]);
   return [value, setValue];
-}
-
-function shouldShowMobileInstallPrompt() {
-  const params = new URLSearchParams(window.location.search);
-  const isNativeApp = params.get("native_app") === "1" || navigator.userAgent.includes("SKEnterprisesApp");
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  const isMobileSize = window.matchMedia("(max-width: 820px)").matches;
-  const dismissed = sessionStorage.getItem("sk_install_prompt_closed") === "1";
-  return isAndroid && isMobileSize && !isNativeApp && !isStandalone && !dismissed;
-}
-
-function getNativeOpenUrl() {
-  const fallbackUrl = `${window.location.origin}${nativeApkUrl}`;
-  return `intent://open#Intent;scheme=skenterprises;package=${androidPackageName};S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
 }
 
 export default App;
