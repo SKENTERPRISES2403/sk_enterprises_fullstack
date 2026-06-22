@@ -1003,6 +1003,42 @@ function getProductPricing(product) {
   return { price, mrp, discount, hasPrice: price > 0 };
 }
 
+function formatAdminDecimal(value) {
+  const rounded = Math.round(Number(value || 0) * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/\.?0+$/, "");
+}
+
+function getDiscountPercent(mrp, price) {
+  const numericMrp = Number(mrp || 0);
+  const numericPrice = Number(price || 0);
+  if (!(numericMrp > 0 && numericPrice > 0 && numericMrp >= numericPrice)) return "";
+  const discount = ((numericMrp - numericPrice) / numericMrp) * 100;
+  return formatAdminDecimal(discount);
+}
+
+function syncAdminPricing(event) {
+  const fieldName = event.target?.name;
+  if (!["mrp", "discount_percent", "price"].includes(fieldName)) return;
+  const form = event.currentTarget;
+  const mrpInput = form.elements.mrp;
+  const discountInput = form.elements.discount_percent;
+  const priceInput = form.elements.price;
+  if (!mrpInput || !discountInput || !priceInput) return;
+
+  const mrp = Number(mrpInput.value || 0);
+  if (["mrp", "discount_percent"].includes(fieldName)) {
+    if (!discountInput.value) return;
+    const discount = Math.min(100, Math.max(0, Number(discountInput.value || 0)));
+    if (discount !== Number(discountInput.value || 0)) discountInput.value = formatAdminDecimal(discount);
+    if (mrp > 0) priceInput.value = formatAdminDecimal(mrp - (mrp * discount) / 100);
+    return;
+  }
+
+  if (fieldName === "price") {
+    discountInput.value = getDiscountPercent(mrpInput.value, priceInput.value);
+  }
+}
+
 function PriceBlock({ product, t, large = false }) {
   const { price, mrp, discount, hasPrice } = getProductPricing(product);
   if (!hasPrice) return <b className="quote-price">{t("askQuote")}</b>;
@@ -1794,10 +1830,11 @@ function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canD
 function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, deleteProduct, canDelete }) {
   const product = editing || emptyProduct;
   const formRef = useEditFormScroll(editing);
+  const initialDiscount = getDiscountPercent(product.mrp, product.price);
   return (
     <>
       <div className="section-head"><h1>Add / Edit Product</h1></div>
-      <form ref={formRef} key={editing?.id || "new-product"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
+      <form ref={formRef} key={editing?.id || "new-product"} className="panel-form admin-form" onInput={syncAdminPricing} onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
         <AdminField label="Product name" hint="Product ka naam likho, jaise FlowKem PTMT Tap ya ESSEL Basin Mixer.">
           <input name="name" defaultValue={product.name} placeholder="Product name" required />
         </AdminField>
@@ -1816,21 +1853,24 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
           </select>
         </AdminField>
         <div className="two-col">
-          <AdminField label="Selling price (SP)" hint="Customer ko dikhne wala final selling price.">
-            <input name="price" type="number" min="0" step="0.01" defaultValue={product.price} placeholder="Selling Price (SP)" required />
-          </AdminField>
           <AdminField label="MRP" hint="Printed MRP, jisse cut price aur discount dikhega.">
             <input name="mrp" type="number" min="0" step="0.01" defaultValue={product.mrp} placeholder="MRP" required />
           </AdminField>
+          <AdminField label="Discount %" hint="MRP par discount percent daalo. Example: MRP 1000 aur discount 20, to SP auto 800 ho jayega.">
+            <input name="discount_percent" type="number" min="0" max="100" step="0.01" defaultValue={initialDiscount} placeholder="Discount %" />
+          </AdminField>
         </div>
         <div className="two-col">
+          <AdminField label="Selling price (SP)" hint="Customer ko dikhne wala final selling price. Discount bharne par ye auto calculate hoga.">
+            <input name="price" type="number" min="0" step="0.01" defaultValue={product.price} placeholder="Selling Price (SP)" required />
+          </AdminField>
           <AdminField label="Stock quantity" hint="Customer isse zyada quantity add/order nahi kar payega.">
             <input name="stock" type="number" min="0" defaultValue={product.stock} placeholder="Stock" />
           </AdminField>
-          <AdminField label="Warranty" hint="Warranty line, jaise 10 years warranty ya brand warranty.">
-            <input name="warranty" defaultValue={product.warranty} placeholder="Warranty" />
-          </AdminField>
         </div>
+        <AdminField label="Warranty" hint="Warranty line, jaise 10 years warranty ya brand warranty.">
+          <input name="warranty" defaultValue={product.warranty} placeholder="Warranty" />
+        </AdminField>
         <AdminField label="Description" hint="Product details, use, size, material ya important notes likho.">
           <textarea name="description" defaultValue={product.description} placeholder="Description" />
         </AdminField>
