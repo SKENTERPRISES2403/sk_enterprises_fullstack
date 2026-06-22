@@ -141,10 +141,16 @@ async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   if (options.body && !(options.body instanceof FormData)) headers["Content-Type"] = "application/json";
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
+  const method = String(options.method || "GET").toUpperCase();
+  const url = new URL(`${API_BASE}${path}`, window.location.origin);
+  if (method === "GET") url.searchParams.set("_fresh", Date.now().toString());
+  const { token, body, headers: _headers, ...fetchOptions } = options;
+  const response = await fetch(url.toString(), {
+    ...fetchOptions,
+    method,
+    cache: "no-store",
     headers,
-    body: options.body && !(options.body instanceof FormData) ? JSON.stringify(options.body) : options.body,
+    body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
   });
   if (!response.ok) {
     let detail = "Request failed";
@@ -184,4 +190,3 @@ export const api = {
     return request("/admin/uploads/image", { method: "POST", token, body: fd });
   },
 };
-

@@ -1,4 +1,4 @@
-const CACHE_NAME = "sk-enterprises-pwa-v11";
+const CACHE_NAME = "sk-enterprises-pwa-v12";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",
@@ -37,14 +37,13 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
+    fetch(request)
+      .then((response) => {
         if (!response || response.status !== 200 || response.type === "opaque") return response;
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(request))
   );
 });

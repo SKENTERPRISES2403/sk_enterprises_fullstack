@@ -1164,6 +1164,7 @@ textarea {
 .panel-form {
   display: grid;
   gap: 13px;
+  scroll-margin-top: 18px;
   padding: 22px;
   background: var(--white);
   border: 1px solid var(--line);

@@ -43,6 +43,16 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=str(settings.upload_dir)), name="uploads")
 
 
+@app.middleware("http")
+async def no_cache_dynamic_content(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith(("/api", "/uploads")):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.on_event("startup")
 async def startup() -> None:
     await connect_to_mongo()

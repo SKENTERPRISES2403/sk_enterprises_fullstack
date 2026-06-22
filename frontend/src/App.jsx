@@ -250,10 +250,10 @@ const copy = {
 function App() {
   const [page, setPage] = useHashPage();
   const [lang, setLang] = useLocalStorage("sk_lang", "en");
-  const [products, setProducts] = useState(demoProducts);
-  const [brands, setBrands] = useState(defaultBrands);
-  const [gallery, setGallery] = useState(defaultGallery);
-  const [certificates, setCertificates] = useState(defaultCertificates);
+  const [products, setProducts] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [gallery, setGallery] = useState([]);
+  const [certificates, setCertificates] = useState([]);
   const [categories, setCategories] = useState(defaultCategories);
   const [query, setQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
@@ -273,12 +273,22 @@ function App() {
 
   useEffect(() => {
     loadCatalog();
+    const refreshVisibleCatalog = () => {
+      if (!document.hidden) loadCatalog({ silent: true });
+    };
+    window.addEventListener("focus", refreshVisibleCatalog);
+    document.addEventListener("visibilitychange", refreshVisibleCatalog);
+    return () => {
+      window.removeEventListener("focus", refreshVisibleCatalog);
+      document.removeEventListener("visibilitychange", refreshVisibleCatalog);
+    };
   }, []);
 
   const t = (key) => copy[activeLang]?.[key] || copy.en[key] || key;
 
-  async function loadCatalog() {
-    setCatalogLoading(true);
+  async function loadCatalog(options = {}) {
+    const silent = options.silent === true;
+    if (!silent) setCatalogLoading(true);
     try {
       const [productRows, categoryRows, brandRows, galleryRows, certificateRows] = await Promise.all([
         api.getProducts(),
@@ -293,14 +303,16 @@ function App() {
       setGallery(galleryRows.length ? galleryRows : defaultGallery);
       setCertificates(certificateRows.length ? certificateRows : defaultCertificates);
     } catch {
-      setProducts((current) => (current.length ? current : demoProducts));
-      setCategories(defaultCategories);
-      setBrands(defaultBrands);
-      setGallery(defaultGallery);
-      setCertificates(defaultCertificates);
-      setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
+      if (!silent) {
+        setProducts((current) => (current.length ? current : demoProducts));
+        setCategories(defaultCategories);
+        setBrands(defaultBrands);
+        setGallery(defaultGallery);
+        setCertificates(defaultCertificates);
+        setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
+      }
     } finally {
-      setCatalogLoading(false);
+      if (!silent) setCatalogLoading(false);
     }
   }
 
@@ -654,7 +666,7 @@ export function StorePage({
       )}
       {catalogLoading && <div className="catalog-loading">Loading latest stock and prices...</div>}
       <div className="product-grid" id="products-list">
-        {!products.length && <Empty message="No products found. Try another brand or search." />}
+        {!catalogLoading && !products.length && <Empty message="No products found. Try another brand or search." />}
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -1403,7 +1415,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
 
   useEffect(() => {
     if (!auth?.token || auth.user.role === "customer") return;
-    refreshAdmin();
+    refreshAdmin().catch((error) => setMessage(error.message || "Admin data refresh failed"));
   }, [auth]);
 
   async function refreshAdmin() {
@@ -1423,7 +1435,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setLeads(leadRows);
     setGallery(galleryRows);
     setCertificates(certificateRows);
-    reloadCatalog();
+    await reloadCatalog({ silent: true });
   }
 
   if (!auth || auth.user.role === "customer") {
@@ -1473,7 +1485,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setEditing(null);
     form.reset();
     setMessage("Product saved");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function saveBrand(form) {
@@ -1497,7 +1509,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setEditingBrand(null);
     form.reset();
     setMessage("Brand saved");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function saveGalleryItem(form) {
@@ -1520,7 +1532,7 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setEditingGallery(null);
     form.reset();
     setMessage("Gallery photo saved");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function saveCertificate(form) {
@@ -1544,42 +1556,42 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
     setEditingCertificate(null);
     form.reset();
     setMessage("Certificate saved");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function deleteProduct(id) {
     await api.deleteProduct(id, auth.token);
     setMessage("Product deleted");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function deleteBrand(id) {
     await api.deleteBrand(id, auth.token);
     setMessage("Brand deleted");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function deleteGalleryItem(id) {
     await api.deleteGalleryItem(id, auth.token);
     setMessage("Gallery photo deleted");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function deleteCertificate(id) {
     await api.deleteCertificate(id, auth.token);
     setMessage("Certificate deleted");
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function updateOrder(id, status) {
     await api.updateOrderStatus(id, status, auth.token);
     setMessage(`Order status updated to ${status}. Customer account will show the latest status.`);
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function updateLead(id, status) {
     await api.updateLeadStatus(id, status, auth.token);
-    refreshAdmin();
+    await refreshAdmin();
   }
 
   async function createStaff(form) {
@@ -1686,6 +1698,24 @@ function AdminField({ label, hint, children }) {
   );
 }
 
+function useEditFormScroll(editing) {
+  const formRef = useRef(null);
+
+  useEffect(() => {
+    if (!editing) return undefined;
+    const timer = window.setTimeout(() => {
+      const form = formRef.current;
+      if (!form) return;
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+      const firstField = form.querySelector("input:not([type='hidden']), textarea, select");
+      firstField?.focus({ preventScroll: true });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [editing?.id]);
+
+  return formRef;
+}
+
 function PhotoUpload({ name, multiple = false }) {
   const [selected, setSelected] = useState("");
   const cameraRef = useRef(null);
@@ -1719,10 +1749,11 @@ function PhotoUpload({ name, multiple = false }) {
 
 function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canDelete }) {
   const brand = editing || emptyBrandItem;
+  const formRef = useEditFormScroll(editing);
   return (
     <>
       <div className="section-head"><h1>Add / Edit Brand</h1></div>
-      <form key={editing?.id || "new-brand"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveBrand(event.currentTarget); }}>
+      <form ref={formRef} key={editing?.id || "new-brand"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveBrand(event.currentTarget); }}>
         <AdminField label="Brand name" hint="Company ka naam likho, jaise ESSEL, FlowKem, Roff.">
           <input name="name" defaultValue={brand.name} placeholder="Brand name" required />
         </AdminField>
@@ -1762,10 +1793,11 @@ function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canD
 
 function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, deleteProduct, canDelete }) {
   const product = editing || emptyProduct;
+  const formRef = useEditFormScroll(editing);
   return (
     <>
       <div className="section-head"><h1>Add / Edit Product</h1></div>
-      <form key={editing?.id || "new-product"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
+      <form ref={formRef} key={editing?.id || "new-product"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveProduct(event.currentTarget); }}>
         <AdminField label="Product name" hint="Product ka naam likho, jaise FlowKem PTMT Tap ya ESSEL Basin Mixer.">
           <input name="name" defaultValue={product.name} placeholder="Product name" required />
         </AdminField>
@@ -1834,10 +1866,11 @@ function ProductsAdmin({ products, brands, editing, setEditing, saveProduct, del
 
 function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGalleryItem, canDelete }) {
   const item = editing || emptyGalleryItem;
+  const formRef = useEditFormScroll(editing);
   return (
     <>
       <div className="section-head"><span className="pill">Showroom</span><h1>Add / Edit Gallery Photo</h1></div>
-      <form key={editing?.id || "new-gallery"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveGalleryItem(event.currentTarget); }}>
+      <form ref={formRef} key={editing?.id || "new-gallery"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveGalleryItem(event.currentTarget); }}>
         <AdminField label="Photo title" hint="Gallery me dikhne wala title, jaise Showroom Front ya Tiles Display.">
           <input name="title" defaultValue={item.title} placeholder="Photo title" required />
         </AdminField>
@@ -1874,10 +1907,11 @@ function GalleryAdmin({ gallery, editing, setEditing, saveGalleryItem, deleteGal
 
 function CertificatesAdmin({ certificates, editing, setEditing, saveCertificate, deleteCertificate, canDelete }) {
   const item = editing || emptyCertificateItem;
+  const formRef = useEditFormScroll(editing);
   return (
     <>
       <div className="section-head"><span className="pill">Certificates</span><h1>Add / Edit Dealership Proof</h1></div>
-      <form key={editing?.id || "new-certificate"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveCertificate(event.currentTarget); }}>
+      <form ref={formRef} key={editing?.id || "new-certificate"} className="panel-form admin-form" onSubmit={(event) => { event.preventDefault(); saveCertificate(event.currentTarget); }}>
         <AdminField label="Certificate title" hint="Title likho, jaise ESSEL Authorized Dealership.">
           <input name="title" defaultValue={item.title} placeholder="Certificate title" required />
         </AdminField>
