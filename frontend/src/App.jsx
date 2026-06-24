@@ -247,14 +247,54 @@ const copy = {
   },
 };
 
+const catalogCacheKey = "sk_catalog_snapshot_v1";
+
+function fallbackCatalog() {
+  return {
+    products: demoProducts,
+    brands: defaultBrands,
+    gallery: defaultGallery,
+    certificates: defaultCertificates,
+    categories: defaultCategories,
+  };
+}
+
+function getInitialCatalog() {
+  const fallback = fallbackCatalog();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const cached = JSON.parse(window.localStorage.getItem(catalogCacheKey) || "null");
+    if (!cached || typeof cached !== "object") return fallback;
+    return {
+      products: Array.isArray(cached.products) && cached.products.length ? cached.products : fallback.products,
+      brands: Array.isArray(cached.brands) && cached.brands.length ? cached.brands : fallback.brands,
+      gallery: Array.isArray(cached.gallery) && cached.gallery.length ? cached.gallery : fallback.gallery,
+      certificates: Array.isArray(cached.certificates) && cached.certificates.length ? cached.certificates : fallback.certificates,
+      categories: Array.isArray(cached.categories) && cached.categories.length ? cached.categories : fallback.categories,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function rememberCatalog(snapshot) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(catalogCacheKey, JSON.stringify({ ...snapshot, saved_at: Date.now() }));
+  } catch {
+    // Storage can be unavailable in private mode; live state still updates.
+  }
+}
+
 function App() {
+  const initialCatalog = useMemo(() => getInitialCatalog(), []);
   const [page, setPage] = useHashPage();
   const [lang, setLang] = useLocalStorage("sk_lang", "en");
-  const [products, setProducts] = useState([]);
-  const [brands, setBrands] = useState([]);
-  const [gallery, setGallery] = useState([]);
-  const [certificates, setCertificates] = useState([]);
-  const [categories, setCategories] = useState(defaultCategories);
+  const [products, setProducts] = useState(initialCatalog.products);
+  const [brands, setBrands] = useState(initialCatalog.brands);
+  const [gallery, setGallery] = useState(initialCatalog.gallery);
+  const [certificates, setCertificates] = useState(initialCatalog.certificates);
+  const [categories, setCategories] = useState(initialCatalog.categories);
   const [query, setQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedSeries, setSelectedSeries] = useState("");
@@ -297,11 +337,19 @@ function App() {
         api.getGallery(),
         api.getCertificates(),
       ]);
-      setProducts(productRows.length ? productRows : demoProducts);
-      setCategories(categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories);
-      setBrands(brandRows.length ? brandRows : defaultBrands);
-      setGallery(galleryRows.length ? galleryRows : defaultGallery);
-      setCertificates(certificateRows.length ? certificateRows : defaultCertificates);
+      const nextCatalog = {
+        products: productRows.length ? productRows : demoProducts,
+        categories: categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories,
+        brands: brandRows.length ? brandRows : defaultBrands,
+        gallery: galleryRows.length ? galleryRows : defaultGallery,
+        certificates: certificateRows.length ? certificateRows : defaultCertificates,
+      };
+      setProducts(nextCatalog.products);
+      setCategories(nextCatalog.categories);
+      setBrands(nextCatalog.brands);
+      setGallery(nextCatalog.gallery);
+      setCertificates(nextCatalog.certificates);
+      rememberCatalog(nextCatalog);
     } catch {
       if (!silent) {
         setProducts((current) => (current.length ? current : demoProducts));
@@ -664,7 +712,7 @@ export function StorePage({
           ))}
         </div>
       )}
-      {catalogLoading && <div className="catalog-loading">Loading latest stock and prices...</div>}
+      {catalogLoading && !products.length && <div className="catalog-loading">Loading latest stock and prices...</div>}
       <div className="product-grid" id="products-list">
         {!catalogLoading && !products.length && <Empty message="No products found. Try another brand or search." />}
         {products.map((product) => (
