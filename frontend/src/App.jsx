@@ -381,7 +381,6 @@ function App() {
         setBrands(defaultBrands);
         setGallery(defaultGallery);
         setCertificates(defaultCertificates);
-        setNotice("Backend offline: demo catalog is visible. Start FastAPI + MongoDB for live data.");
       }
     } finally {
       if (!silent) setCatalogLoading(false);

@@ -2018,6 +2018,151 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .product-grid,
+  .brand-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .product-card {
+    border-radius: 8px;
+    box-shadow: 0 5px 16px rgba(10, 37, 64, 0.06);
+  }
+
+  .image-button img {
+    aspect-ratio: 1 / 1;
+  }
+
+  .image-button span {
+    left: 6px;
+    top: 6px;
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+
+  .product-body {
+    padding: 10px;
+  }
+
+  .product-body small,
+  .product-body p {
+    font-size: 11px;
+  }
+
+  .product-body h3 {
+    display: -webkit-box;
+    min-height: 36px;
+    overflow: hidden;
+    margin: 4px 0 3px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 15px;
+  }
+
+  .series-pill {
+    min-height: 20px;
+    margin-bottom: 5px;
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .price-block {
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .selling-line {
+    gap: 5px;
+  }
+
+  .selling-line b {
+    font-size: 1rem;
+  }
+
+  .selling-line span {
+    min-height: 20px;
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .mrp-line {
+    font-size: 11px;
+  }
+
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 0 10px 10px;
+  }
+
+  .card-actions button,
+  .add-cart-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .card-stepper {
+    min-width: 0;
+    min-height: 36px;
+    grid-template-columns: 34px 1fr 34px;
+  }
+
+  .card-stepper button {
+    min-height: 34px;
+  }
+
+  .brand-card {
+    min-height: 0;
+    padding: 9px;
+    gap: 7px;
+  }
+
+  .brand-select-button {
+    gap: 7px;
+    padding: 0;
+  }
+
+  .brand-card span {
+    height: 56px;
+    padding: 6px;
+  }
+
+  .brand-card img {
+    max-height: 42px;
+    max-width: 100%;
+  }
+
+  .brand-card b {
+    font-size: 0.92rem;
+  }
+
+  .brand-card small,
+  .brand-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .brand-card small {
+    -webkit-line-clamp: 2;
+  }
+
+  .brand-card p {
+    -webkit-line-clamp: 3;
+  }
+
+  .catalog-link {
+    min-height: 34px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
   .float-links {
     right: 10px;
     left: 10px;
