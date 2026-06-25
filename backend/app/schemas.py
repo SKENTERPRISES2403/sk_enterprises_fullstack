@@ -63,6 +63,7 @@ class ProductOut(ProductIn):
 class BrandIn(BaseModel):
     name: str
     logo_url: str = ""
+    catalog_url: str = ""
     description: str = ""
     warranty: str = ""
     position: int = 0

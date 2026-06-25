@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
 from .db import close_mongo, connect_to_mongo, get_db
-from .image_upload import upload_image
+from .image_upload import upload_catalog_file, upload_image
 from .schemas import (
     AddressIn,
     BrandIn,
@@ -213,6 +213,24 @@ async def certificates() -> list[dict[str, Any]]:
     return [doc_id(doc) async for doc in cursor]
 
 
+@app.get("/api/catalog")
+async def catalog() -> dict[str, Any]:
+    db = get_db()
+    product_cursor = db.products.find({"active": {"$ne": False}}).sort([("featured", -1), ("name", 1)])
+    category_cursor = db.categories.find({"active": {"$ne": False}}).sort("name", 1)
+    brand_cursor = db.brands.find({"active": {"$ne": False}}).sort([("position", 1), ("name", 1)])
+    gallery_cursor = db.gallery.find({"active": {"$ne": False}}).sort([("position", 1), ("created_at", -1)])
+    certificate_cursor = db.certificates.find({"active": {"$ne": False}}).sort([("position", 1), ("created_at", -1)])
+
+    return {
+        "products": [clean_product(doc) async for doc in product_cursor],
+        "categories": [doc_id(doc) async for doc in category_cursor],
+        "brands": [doc_id(doc) async for doc in brand_cursor],
+        "gallery": [doc_id(doc) async for doc in gallery_cursor],
+        "certificates": [doc_id(doc) async for doc in certificate_cursor],
+    }
+
+
 @app.post("/api/admin/gallery")
 async def create_gallery_item(payload: GalleryIn, _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff"))) -> dict[str, Any]:
     doc = payload.model_dump()
@@ -341,6 +359,14 @@ async def upload_product_image(
     _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff")),
 ) -> dict[str, str]:
     return {"image_url": upload_image(file, settings)}
+
+
+@app.post("/api/admin/uploads/catalog")
+async def upload_brand_catalog(
+    file: UploadFile = File(...),
+    _: dict[str, Any] = Depends(require_roles("owner", "admin", "staff")),
+) -> dict[str, str]:
+    return {"catalog_url": upload_catalog_file(file, settings)}
 
 
 @app.get("/api/addresses")

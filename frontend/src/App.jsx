@@ -52,6 +52,7 @@ const emptyCertificateItem = {
 const emptyBrandItem = {
   name: "",
   logo_url: "",
+  catalog_url: "",
   description: "",
   warranty: "",
   position: 0,
@@ -247,7 +248,7 @@ const copy = {
   },
 };
 
-const catalogCacheKey = "sk_catalog_snapshot_v1";
+const catalogCacheKey = "sk_catalog_snapshot_v2";
 
 function fallbackCatalog() {
   return {
@@ -259,19 +260,34 @@ function fallbackCatalog() {
   };
 }
 
+function normalizeCategoryRows(rows, fallback) {
+  if (!Array.isArray(rows)) return fallback;
+  const names = rows
+    .map((item) => (typeof item === "string" ? item : item?.name))
+    .filter(Boolean);
+  return names.length ? names : fallback;
+}
+
+function normalizeCatalog(source) {
+  if (!source || typeof source !== "object") return null;
+  const fallback = fallbackCatalog();
+  return {
+    products: Array.isArray(source.products) && source.products.length ? source.products : fallback.products,
+    brands: Array.isArray(source.brands) && source.brands.length ? source.brands : fallback.brands,
+    gallery: Array.isArray(source.gallery) && source.gallery.length ? source.gallery : fallback.gallery,
+    certificates: Array.isArray(source.certificates) && source.certificates.length ? source.certificates : fallback.certificates,
+    categories: normalizeCategoryRows(source.categories, fallback.categories),
+  };
+}
+
 function getInitialCatalog() {
   const fallback = fallbackCatalog();
   if (typeof window === "undefined") return fallback;
   try {
+    const bootstrapped = normalizeCatalog(window.__SK_BOOTSTRAP_CATALOG__);
+    if (bootstrapped) return bootstrapped;
     const cached = JSON.parse(window.localStorage.getItem(catalogCacheKey) || "null");
-    if (!cached || typeof cached !== "object") return fallback;
-    return {
-      products: Array.isArray(cached.products) && cached.products.length ? cached.products : fallback.products,
-      brands: Array.isArray(cached.brands) && cached.brands.length ? cached.brands : fallback.brands,
-      gallery: Array.isArray(cached.gallery) && cached.gallery.length ? cached.gallery : fallback.gallery,
-      certificates: Array.isArray(cached.certificates) && cached.certificates.length ? cached.certificates : fallback.certificates,
-      categories: Array.isArray(cached.categories) && cached.categories.length ? cached.categories : fallback.categories,
-    };
+    return normalizeCatalog(cached) || fallback;
   } catch {
     return fallback;
   }
@@ -283,6 +299,27 @@ function rememberCatalog(snapshot) {
     window.localStorage.setItem(catalogCacheKey, JSON.stringify({ ...snapshot, saved_at: Date.now() }));
   } catch {
     // Storage can be unavailable in private mode; live state still updates.
+  }
+}
+
+async function fetchLiveCatalog() {
+  try {
+    return normalizeCatalog(await api.getCatalog());
+  } catch {
+    const [productRows, categoryRows, brandRows, galleryRows, certificateRows] = await Promise.all([
+      api.getProducts(),
+      api.getCategories(),
+      api.getBrands(),
+      api.getGallery(),
+      api.getCertificates(),
+    ]);
+    return normalizeCatalog({
+      products: productRows,
+      categories: categoryRows,
+      brands: brandRows,
+      gallery: galleryRows,
+      certificates: certificateRows,
+    });
   }
 }
 
@@ -330,20 +367,7 @@ function App() {
     const silent = options.silent === true;
     if (!silent) setCatalogLoading(true);
     try {
-      const [productRows, categoryRows, brandRows, galleryRows, certificateRows] = await Promise.all([
-        api.getProducts(),
-        api.getCategories(),
-        api.getBrands(),
-        api.getGallery(),
-        api.getCertificates(),
-      ]);
-      const nextCatalog = {
-        products: productRows.length ? productRows : demoProducts,
-        categories: categoryRows.length ? categoryRows.map((item) => item.name) : defaultCategories,
-        brands: brandRows.length ? brandRows : defaultBrands,
-        gallery: galleryRows.length ? galleryRows : defaultGallery,
-        certificates: certificateRows.length ? certificateRows : defaultCertificates,
-      };
+      const nextCatalog = await fetchLiveCatalog() || fallbackCatalog();
       setProducts(nextCatalog.products);
       setCategories(nextCatalog.categories);
       setBrands(nextCatalog.brands);
@@ -850,17 +874,23 @@ function ShopByBrand({ brands, selectedBrand, onSelect }) {
       <div className="subsection-label">Shop by Brand</div>
       <div className="brand-grid">
         {sorted.map((brand) => (
-          <button
+          <article
             className={`brand-card ${selectedBrand === brand.name ? "active" : ""}`}
             data-brand-name={brand.name}
             key={brand.id || brand.name}
-            onClick={() => onSelect(brand)}
           >
-            <span><img src={imageUrl(brand.logo_url)} alt={`${brand.name} logo`} /></span>
-            <b>{brand.name}</b>
-            <small>{brand.warranty}</small>
-            <p>{brand.description}</p>
-          </button>
+            <button className="brand-select-button" type="button" onClick={() => onSelect(brand)}>
+              <span><img src={imageUrl(brand.logo_url)} alt={`${brand.name} logo`} /></span>
+              <b>{brand.name}</b>
+              <small>{brand.warranty}</small>
+              <p>{brand.description}</p>
+            </button>
+            {brand.catalog_url && (
+              <a className="catalog-link" href={imageUrl(brand.catalog_url)} target="_blank" rel="noreferrer">
+                See Catalog
+              </a>
+            )}
+          </article>
         ))}
       </div>
     </section>
@@ -1575,14 +1605,21 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   async function saveBrand(form) {
     const fd = new FormData(form);
     let logoUrlValue = fd.get("logo_url") || "";
+    let catalogUrlValue = fd.get("catalog_url") || "";
     const logoFile = getFormFiles(fd, "logo_file")[0];
     if (logoFile && logoFile.size) {
       const upload = await api.uploadImage(logoFile, auth.token);
       logoUrlValue = upload.image_url;
     }
+    const catalogFile = getFormFiles(fd, "catalog_file")[0];
+    if (catalogFile && catalogFile.size) {
+      const upload = await api.uploadCatalog(catalogFile, auth.token);
+      catalogUrlValue = upload.catalog_url;
+    }
     const payload = {
       name: fd.get("name"),
       logo_url: logoUrlValue,
+      catalog_url: catalogUrlValue,
       description: fd.get("description"),
       warranty: fd.get("warranty"),
       position: Number(fd.get("position") || 0),
@@ -1855,6 +1892,12 @@ function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canD
             <input name="logo_url" defaultValue={brand.logo_url} placeholder="Existing logo URL" />
           </AdminField>
         </div>
+        <AdminField label="Catalog PDF / photo URL (optional)" hint="Brand catalog ka PDF ya photo URL paste karo. Blank chhodne par customer ko catalog button nahi dikhega.">
+          <input name="catalog_url" defaultValue={brand.catalog_url || ""} placeholder="Catalog PDF/photo URL" />
+        </AdminField>
+        <AdminField label="Upload catalog PDF / photo" hint="Brand ka catalog PDF ya photo upload karo. Jis brand ka catalog nahi hai, blank chhod do.">
+          <input name="catalog_file" type="file" accept="application/pdf,.pdf,image/*" />
+        </AdminField>
         <AdminField label="Upload logo photo" hint="Phone camera/gallery se brand logo upload karo.">
           <PhotoUpload name="logo_file" />
         </AdminField>
@@ -1865,7 +1908,7 @@ function BrandsAdmin({ brands, editing, setEditing, saveBrand, deleteBrand, canD
           <article className="admin-row" key={item.id}>
             <img src={imageUrl(item.logo_url)} alt={item.name} />
             <div><b>{item.name}</b><small>{item.warranty || item.description}</small></div>
-            <span>Order {item.position || 0}</span>
+            <span>{item.catalog_url ? "Catalog added" : `Order ${item.position || 0}`}</span>
             <button onClick={() => setEditing(item)}>Edit</button>
             {canDelete && <button className="danger" onClick={() => deleteBrand(item.id)}>Delete</button>}
           </article>

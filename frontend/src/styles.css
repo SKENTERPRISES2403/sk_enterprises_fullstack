@@ -658,7 +658,7 @@ textarea {
   gap: 9px;
   align-content: start;
   min-height: 238px;
-  padding: 17px;
+  padding: 12px;
   color: var(--ink);
   background: var(--white);
   border: 1px solid var(--line);
@@ -674,6 +674,23 @@ textarea {
   transform: translateY(-3px);
   border-bottom-color: var(--orange);
   box-shadow: var(--shadow);
+}
+
+.brand-select-button {
+  display: grid;
+  gap: 9px;
+  width: 100%;
+  min-height: 0;
+  padding: 5px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  text-align: left;
+}
+
+.brand-select-button:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .brand-card span {
@@ -706,6 +723,25 @@ textarea {
   color: var(--muted);
   font-size: 0.92rem;
   font-weight: 650;
+}
+
+.catalog-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin-top: auto;
+  padding: 8px 11px;
+  color: var(--white);
+  background: var(--navy);
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.catalog-link:hover {
+  background: var(--orange);
 }
 
 .filter-strip {

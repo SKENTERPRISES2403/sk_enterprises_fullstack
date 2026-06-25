@@ -167,6 +167,7 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  getCatalog: () => request("/catalog"),
   getProducts: () => request("/products"),
   getCategories: () => request("/categories"),
   productDetail: (id) => request(`/products/${id}`),
@@ -188,5 +189,10 @@ export const api = {
     const fd = new FormData();
     fd.append("file", file);
     return request("/admin/uploads/image", { method: "POST", token, body: fd });
+  },
+  uploadCatalog: (file, token) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request("/admin/uploads/catalog", { method: "POST", token, body: fd });
   },
 };
