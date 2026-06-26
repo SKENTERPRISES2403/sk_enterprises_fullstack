@@ -610,7 +610,7 @@ function App() {
       )}
 
       {page === "admin" && (
-        <AdminPanel auth={auth} setPage={setPage} reloadCatalog={loadCatalog} />
+        <AdminPanel auth={auth} setAuth={setAuth} setPage={setPage} reloadCatalog={loadCatalog} />
       )}
 
       <FloatingLinks />
@@ -1508,7 +1508,7 @@ export function OrderHistory({ auth, setPage }) {
   );
 }
 
-export function AdminPanel({ auth, setPage, reloadCatalog }) {
+export function AdminPanel({ auth, setAuth, setPage, reloadCatalog }) {
   const [tab, setTab] = useState("dashboard");
   const [dashboard, setDashboard] = useState(null);
   const [products, setProducts] = useState([]);
@@ -1526,10 +1526,24 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   const canDelete = ["owner", "admin"].includes(auth?.user?.role);
   const canCreateStaff = ["owner", "admin"].includes(auth?.user?.role);
 
+  function handleAdminError(error, fallbackMessage = "Admin request failed") {
+    const messageText = error?.message || fallbackMessage;
+    const isExpiredSession =
+      error?.status === 401 ||
+      /invalid or expired token|login required|invalid token|token subject|user not found|inactive/i.test(messageText);
+    if (isExpiredSession) {
+      setAuth?.(null);
+      setMessage("Session expired. Please login again.");
+      setPage("login");
+      return;
+    }
+    setMessage(messageText);
+  }
+
   useEffect(() => {
     if (!auth?.token || auth.user.role === "customer") return;
-    refreshAdmin().catch((error) => setMessage(error.message || "Admin data refresh failed"));
-  }, [auth]);
+    refreshAdmin().catch((error) => handleAdminError(error, "Admin data refresh failed"));
+  }, [auth?.token]);
 
   async function refreshAdmin() {
     const [stats, productRows, brandRows, orderRows, leadRows, galleryRows, certificateRows] = await Promise.all([
@@ -1561,164 +1575,208 @@ export function AdminPanel({ auth, setPage, reloadCatalog }) {
   }
 
   async function saveProduct(form) {
-    const fd = new FormData(form);
-    let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = getFormFiles(fd, "image_file")[0];
-    const imageUrls = String(fd.get("image_urls") || "")
-      .split(/\r?\n/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-    if (imageFile && imageFile.size) {
-      const upload = await api.uploadImage(imageFile, auth.token);
-      imageUrlValue = upload.image_url;
-      imageUrls.unshift(upload.image_url);
+    try {
+      const fd = new FormData(form);
+      let imageUrlValue = fd.get("image_url") || "";
+      const imageFile = getFormFiles(fd, "image_file")[0];
+      const imageUrls = String(fd.get("image_urls") || "")
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+      if (imageFile && imageFile.size) {
+        const upload = await api.uploadImage(imageFile, auth.token);
+        imageUrlValue = upload.image_url;
+        imageUrls.unshift(upload.image_url);
+      }
+      const galleryFiles = getFormFiles(fd, "image_files");
+      for (const file of galleryFiles) {
+        const upload = await api.uploadImage(file, auth.token);
+        imageUrls.push(upload.image_url);
+      }
+      const payload = {
+        name: fd.get("name"),
+        brand: fd.get("brand"),
+        series: String(fd.get("series") || "").trim(),
+        category: fd.get("category"),
+        price: Number(fd.get("price") || 0),
+        mrp: Number(fd.get("mrp") || 0),
+        stock: Number(fd.get("stock") || 0),
+        warranty: fd.get("warranty"),
+        description: fd.get("description"),
+        image_url: imageUrlValue || imageUrls[0] || "",
+        image_urls: Array.from(new Set(imageUrls)),
+        featured: fd.get("featured") === "on",
+        active: true,
+      };
+      if (editing?.id) await api.updateProduct(editing.id, payload, auth.token);
+      else await api.createProduct(payload, auth.token);
+      setEditing(null);
+      form.reset();
+      setMessage("Product saved");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Product save failed");
     }
-    const galleryFiles = getFormFiles(fd, "image_files");
-    for (const file of galleryFiles) {
-      const upload = await api.uploadImage(file, auth.token);
-      imageUrls.push(upload.image_url);
-    }
-    const payload = {
-      name: fd.get("name"),
-      brand: fd.get("brand"),
-      series: String(fd.get("series") || "").trim(),
-      category: fd.get("category"),
-      price: Number(fd.get("price") || 0),
-      mrp: Number(fd.get("mrp") || 0),
-      stock: Number(fd.get("stock") || 0),
-      warranty: fd.get("warranty"),
-      description: fd.get("description"),
-      image_url: imageUrlValue || imageUrls[0] || "",
-      image_urls: Array.from(new Set(imageUrls)),
-      featured: fd.get("featured") === "on",
-      active: true,
-    };
-    if (editing?.id) await api.updateProduct(editing.id, payload, auth.token);
-    else await api.createProduct(payload, auth.token);
-    setEditing(null);
-    form.reset();
-    setMessage("Product saved");
-    await refreshAdmin();
   }
 
   async function saveBrand(form) {
-    const fd = new FormData(form);
-    let logoUrlValue = fd.get("logo_url") || "";
-    let catalogUrlValue = fd.get("catalog_url") || "";
-    const logoFile = getFormFiles(fd, "logo_file")[0];
-    if (logoFile && logoFile.size) {
-      const upload = await api.uploadImage(logoFile, auth.token);
-      logoUrlValue = upload.image_url;
+    try {
+      const fd = new FormData(form);
+      let logoUrlValue = fd.get("logo_url") || "";
+      let catalogUrlValue = fd.get("catalog_url") || "";
+      const logoFile = getFormFiles(fd, "logo_file")[0];
+      if (logoFile && logoFile.size) {
+        const upload = await api.uploadImage(logoFile, auth.token);
+        logoUrlValue = upload.image_url;
+      }
+      const catalogFile = getFormFiles(fd, "catalog_file")[0];
+      if (catalogFile && catalogFile.size) {
+        const upload = await api.uploadCatalog(catalogFile, auth.token);
+        catalogUrlValue = upload.catalog_url;
+      }
+      const payload = {
+        name: fd.get("name"),
+        logo_url: logoUrlValue,
+        catalog_url: catalogUrlValue,
+        description: fd.get("description"),
+        warranty: fd.get("warranty"),
+        position: Number(fd.get("position") || 0),
+        active: true,
+      };
+      if (editingBrand?.id) await api.updateBrand(editingBrand.id, payload, auth.token);
+      else await api.createBrand(payload, auth.token);
+      setEditingBrand(null);
+      form.reset();
+      setMessage("Brand saved");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Brand save failed");
     }
-    const catalogFile = getFormFiles(fd, "catalog_file")[0];
-    if (catalogFile && catalogFile.size) {
-      const upload = await api.uploadCatalog(catalogFile, auth.token);
-      catalogUrlValue = upload.catalog_url;
-    }
-    const payload = {
-      name: fd.get("name"),
-      logo_url: logoUrlValue,
-      catalog_url: catalogUrlValue,
-      description: fd.get("description"),
-      warranty: fd.get("warranty"),
-      position: Number(fd.get("position") || 0),
-      active: true,
-    };
-    if (editingBrand?.id) await api.updateBrand(editingBrand.id, payload, auth.token);
-    else await api.createBrand(payload, auth.token);
-    setEditingBrand(null);
-    form.reset();
-    setMessage("Brand saved");
-    await refreshAdmin();
   }
 
   async function saveGalleryItem(form) {
-    const fd = new FormData(form);
-    let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = getFormFiles(fd, "image_file")[0];
-    if (imageFile && imageFile.size) {
-      const upload = await api.uploadImage(imageFile, auth.token);
-      imageUrlValue = upload.image_url;
+    try {
+      const fd = new FormData(form);
+      let imageUrlValue = fd.get("image_url") || "";
+      const imageFile = getFormFiles(fd, "image_file")[0];
+      if (imageFile && imageFile.size) {
+        const upload = await api.uploadImage(imageFile, auth.token);
+        imageUrlValue = upload.image_url;
+      }
+      const payload = {
+        title: fd.get("title"),
+        caption: fd.get("caption"),
+        image_url: imageUrlValue,
+        position: Number(fd.get("position") || 0),
+        active: true,
+      };
+      if (editingGallery?.id) await api.updateGalleryItem(editingGallery.id, payload, auth.token);
+      else await api.createGalleryItem(payload, auth.token);
+      setEditingGallery(null);
+      form.reset();
+      setMessage("Gallery photo saved");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Gallery save failed");
     }
-    const payload = {
-      title: fd.get("title"),
-      caption: fd.get("caption"),
-      image_url: imageUrlValue,
-      position: Number(fd.get("position") || 0),
-      active: true,
-    };
-    if (editingGallery?.id) await api.updateGalleryItem(editingGallery.id, payload, auth.token);
-    else await api.createGalleryItem(payload, auth.token);
-    setEditingGallery(null);
-    form.reset();
-    setMessage("Gallery photo saved");
-    await refreshAdmin();
   }
 
   async function saveCertificate(form) {
-    const fd = new FormData(form);
-    let imageUrlValue = fd.get("image_url") || "";
-    const imageFile = getFormFiles(fd, "image_file")[0];
-    if (imageFile && imageFile.size) {
-      const upload = await api.uploadImage(imageFile, auth.token);
-      imageUrlValue = upload.image_url;
+    try {
+      const fd = new FormData(form);
+      let imageUrlValue = fd.get("image_url") || "";
+      const imageFile = getFormFiles(fd, "image_file")[0];
+      if (imageFile && imageFile.size) {
+        const upload = await api.uploadImage(imageFile, auth.token);
+        imageUrlValue = upload.image_url;
+      }
+      const payload = {
+        title: fd.get("title"),
+        brand: fd.get("brand"),
+        caption: fd.get("caption"),
+        image_url: imageUrlValue,
+        position: Number(fd.get("position") || 0),
+        active: true,
+      };
+      if (editingCertificate?.id) await api.updateCertificate(editingCertificate.id, payload, auth.token);
+      else await api.createCertificate(payload, auth.token);
+      setEditingCertificate(null);
+      form.reset();
+      setMessage("Certificate saved");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Certificate save failed");
     }
-    const payload = {
-      title: fd.get("title"),
-      brand: fd.get("brand"),
-      caption: fd.get("caption"),
-      image_url: imageUrlValue,
-      position: Number(fd.get("position") || 0),
-      active: true,
-    };
-    if (editingCertificate?.id) await api.updateCertificate(editingCertificate.id, payload, auth.token);
-    else await api.createCertificate(payload, auth.token);
-    setEditingCertificate(null);
-    form.reset();
-    setMessage("Certificate saved");
-    await refreshAdmin();
   }
 
   async function deleteProduct(id) {
-    await api.deleteProduct(id, auth.token);
-    setMessage("Product deleted");
-    await refreshAdmin();
+    try {
+      await api.deleteProduct(id, auth.token);
+      setMessage("Product deleted");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Product delete failed");
+    }
   }
 
   async function deleteBrand(id) {
-    await api.deleteBrand(id, auth.token);
-    setMessage("Brand deleted");
-    await refreshAdmin();
+    try {
+      await api.deleteBrand(id, auth.token);
+      setMessage("Brand deleted");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Brand delete failed");
+    }
   }
 
   async function deleteGalleryItem(id) {
-    await api.deleteGalleryItem(id, auth.token);
-    setMessage("Gallery photo deleted");
-    await refreshAdmin();
+    try {
+      await api.deleteGalleryItem(id, auth.token);
+      setMessage("Gallery photo deleted");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Gallery delete failed");
+    }
   }
 
   async function deleteCertificate(id) {
-    await api.deleteCertificate(id, auth.token);
-    setMessage("Certificate deleted");
-    await refreshAdmin();
+    try {
+      await api.deleteCertificate(id, auth.token);
+      setMessage("Certificate deleted");
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Certificate delete failed");
+    }
   }
 
   async function updateOrder(id, status) {
-    await api.updateOrderStatus(id, status, auth.token);
-    setMessage(`Order status updated to ${status}. Customer account will show the latest status.`);
-    await refreshAdmin();
+    try {
+      await api.updateOrderStatus(id, status, auth.token);
+      setMessage(`Order status updated to ${status}. Customer account will show the latest status.`);
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Order update failed");
+    }
   }
 
   async function updateLead(id, status) {
-    await api.updateLeadStatus(id, status, auth.token);
-    await refreshAdmin();
+    try {
+      await api.updateLeadStatus(id, status, auth.token);
+      await refreshAdmin();
+    } catch (error) {
+      handleAdminError(error, "Lead update failed");
+    }
   }
 
   async function createStaff(form) {
-    const payload = Object.fromEntries(new FormData(form));
-    await api.createStaff(payload, auth.token);
-    setMessage("Staff/admin user created");
-    form.reset();
+    try {
+      const payload = Object.fromEntries(new FormData(form));
+      await api.createStaff(payload, auth.token);
+      setMessage("Staff/admin user created");
+      form.reset();
+    } catch (error) {
+      handleAdminError(error, "Staff creation failed");
+    }
   }
 
   const menuItems = [

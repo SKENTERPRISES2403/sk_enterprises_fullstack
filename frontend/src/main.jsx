@@ -10,7 +10,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 async function loadBootstrapCatalog() {
   if (!window.fetch) return;
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 3200);
+  const timeout = window.setTimeout(() => controller.abort(), 900);
   try {
     const url = new URL(`${API_BASE}/catalog`, window.location.origin);
     url.searchParams.set("_fresh", Date.now().toString());

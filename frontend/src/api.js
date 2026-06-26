@@ -326,11 +326,58 @@ export const defaultGallery = [
   },
 ];
 
+const uploadAssetMap = {
+  "/uploads/essel-logo.png": "/assets/brands/essel-logo.png",
+  "/uploads/birla-pivot-logo.jpg": "/assets/brands/birla-pivot-logo.jpg",
+  "/uploads/roff-logo.png": "/assets/brands/roff-logo.png",
+  "/uploads/supreme-logo.png": "/assets/brands/supreme-logo.png",
+  "/uploads/ashirvad-logo.png": "/assets/brands/ashirvad-logo.png",
+  "/uploads/cera-logo.png": "/assets/brands/cera-logo.png",
+  "/uploads/hindware-logo.png": "/assets/brands/hindware-logo.png",
+  "/uploads/sintex-logo.png": "/assets/brands/sintex-logo.png",
+  "/uploads/araldite-logo.png": "/assets/brands/araldite-logo.png",
+  "/uploads/flowkem-logo.png": "/assets/brands/flowkem-logo.png",
+  "/uploads/essel_taps2.jpg": "/assets/essel_taps2.jpg",
+  "/uploads/black_taps.jpg": "/assets/black_taps.jpg",
+  "/uploads/bathroom_demo.jpg": "/assets/bathroom_demo.jpg",
+  "/uploads/birla_pivot_stock.jpg": "/assets/birla_pivot_stock.jpg",
+  "/uploads/birla_toilet.jpg": "/assets/birla_toilet.jpg",
+  "/uploads/essel.jpg.jpeg": "/assets/essel.jpg.jpeg",
+  "/uploads/essel_cert.jpg": "/assets/essel_cert.jpg",
+  "/uploads/tiles.jpg": "/assets/tiles.jpg",
+  "/uploads/tile_samples.jpg": "/assets/tile_samples.jpg",
+  "/uploads/tanks.jpg": "/assets/tanks.jpg",
+  "/uploads/shop.jpg": "/assets/shop.jpg",
+  "/uploads/shop_exterior.jpg": "/assets/shop_exterior.jpg",
+  "/uploads/sink.jpg": "/assets/sink.jpg",
+  "/uploads/roff.jpg": "/assets/roff.jpg",
+  "/uploads/roff.jpg (2).jpeg": "/assets/roff.jpg (2).jpeg",
+  "/uploads/roff_cert.jpg": "/assets/roff_cert.jpg",
+  "/uploads/sanitary.jpg": "/assets/sanitary.jpg",
+  "/uploads/taps.jpg": "/assets/taps.jpg",
+  "/uploads/toyo_taps.jpg": "/assets/toyo_taps.jpg",
+  "/uploads/gallery1.jpg": "/assets/gallery1.jpg",
+  "/uploads/gallery2.jpg": "/assets/gallery2.jpg",
+  "/uploads/gallery3.jpg": "/assets/gallery3.jpg",
+  "/uploads/gallery4.jpg": "/assets/gallery4.jpg",
+  "/uploads/gallery5.jpg": "/assets/gallery5.jpg",
+  "/uploads/gallery6.jpg": "/assets/gallery6.jpg",
+  "/uploads/gallery7.jpg": "/assets/gallery7.jpg",
+  "/uploads/gallery8.jpg": "/assets/gallery8.jpg",
+  "/uploads/showroom_wall.jpg": "/assets/showroom_wall.jpg",
+  "/uploads/essel-certificate.jpeg": "/assets/certificates/essel-certificate.jpeg",
+  "/uploads/roff-certificate.jpeg": "/assets/certificates/roff-certificate.jpeg",
+};
+
 export function imageUrl(url) {
-  if (!url) return "/assets/shop.jpg";
-  if (url.startsWith("http") || url.startsWith("data:")) return url;
-  if (url.startsWith("/uploads")) return `${API_ORIGIN}${url}`;
-  return url;
+  const value = String(url || "").trim();
+  if (!value) return "/assets/shop.jpg";
+  if (value.startsWith("http") || value.startsWith("data:")) return value;
+  const path = value.split(/[?#]/)[0];
+  const suffix = value.slice(path.length);
+  if (uploadAssetMap[path]) return `${uploadAssetMap[path]}${suffix}`;
+  if (value.startsWith("/uploads")) return `${API_ORIGIN}${value}`;
+  return value;
 }
 
 async function request(path, options = {}) {
@@ -356,7 +403,9 @@ async function request(path, options = {}) {
     } catch {
       detail = response.statusText;
     }
-    throw new Error(detail);
+    const requestError = new Error(detail);
+    requestError.status = response.status;
+    throw requestError;
   }
   if (response.status === 204) return null;
   return response.json();

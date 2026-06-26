@@ -1,4 +1,4 @@
-const CACHE_NAME = "sk-enterprises-pwa-v14";
+const CACHE_NAME = "sk-enterprises-pwa-v15";
 const APP_SHELL = [
   "/",
   "/manifest.webmanifest",

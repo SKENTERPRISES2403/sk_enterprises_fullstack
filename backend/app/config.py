@@ -17,7 +17,7 @@ class Settings(BaseModel):
     database_name: str = os.getenv("DATABASE_NAME", "sk_enterprises")
     allow_local_db_fallback: bool = os.getenv("ALLOW_LOCAL_DB_FALLBACK", "").lower() in {"1", "true", "yes"}
     jwt_secret: str = os.getenv("JWT_SECRET", "dev-secret-change-me")
-    jwt_expires_minutes: int = int(os.getenv("JWT_EXPIRES_MINUTES", "10080"))
+    jwt_expires_minutes: int = int(os.getenv("JWT_EXPIRES_MINUTES", "43200"))
     frontend_origin: str = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
     frontend_origins: str = os.getenv("FRONTEND_ORIGINS", "")
     seed_owner_name: str = os.getenv("SEED_OWNER_NAME", "S.K. Owner")
